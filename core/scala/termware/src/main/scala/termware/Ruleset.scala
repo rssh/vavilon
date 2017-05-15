@@ -1,0 +1,3 @@
+package termware
+
+trait Ruleset
