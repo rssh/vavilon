@@ -1,8 +1,6 @@
 package termware
 
-trait Ruleset
-{
-
+class TermOps[T] {
 
 
 }

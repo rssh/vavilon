@@ -1,0 +1,11 @@
+package termware
+
+
+
+class BaseMultiTermSpec {
+
+
+
+
+
+}

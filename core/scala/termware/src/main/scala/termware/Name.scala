@@ -33,7 +33,7 @@ abstract class StringLikeName(val value:String) extends Name
 }
 
 @specialized(Byte,Int,Long,Double,Char)
-final case class PrimitiveName[T](val value: T)(implicit descriptor: PrimitiveDescriptor[T]) extends Name
+final case class PrimitiveName[T](val value: T)(implicit descriptor: PrimitiveTermOps[_,T]) extends Name
 {
 
   override type Carrier = T
@@ -72,12 +72,14 @@ final object StarName extends SingletonName(TypeIndexes.STAR)
 final object UnitName extends SingletonName(TypeIndexes.UNIT)
 final object ErrorName extends SingletonName(TypeIndexes.ERROR)
 final object ArrowName extends SingletonName(TypeIndexes.ARROW)
+final object EmptyName extends SingletonName(TypeIndexes.EMPTY)
 
 object TypeIndexes
 {
 
   // 1-128: reserved for primitives [see primitive descriptor ]
   final val ATOM = 129
+  final val EMPTY = 130
 
   final val SEQ  = 200
   final val SET  = 201
