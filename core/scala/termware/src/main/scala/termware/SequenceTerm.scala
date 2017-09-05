@@ -21,16 +21,33 @@ trait SequenceTermImpl[S<:SequenceTermImpl[S]] extends SequenceTerm with PointTe
 
 }
 
-case class DefaultSequenceTerm(values:IndexedSeq[MultiTerm]) extends SequenceTermImpl[DefaultSequenceTerm]
+case class PlainSequenceTerm(values:IndexedSeq[MultiTerm]) extends SequenceTermImpl[PlainSequenceTerm] with EmptyContext
 {
-  override def subterm(i: Int): MultiTerm = ???
+  override def subterm(i: Int): MultiTerm = {
+    if (i < values.size && i>0) {
+      values(i)
+    }else{
+      EmptyTerm
+    }
+  }
 
-  override def subterms(): IndexedSeq[MultiTerm] = ???
+  override def subterms(): IndexedSeq[MultiTerm] = values
 
-  override def arity: Int = ???
+  override def arity: Int = values.size
 
-  override def context: MultiTerm = ???
+  override def uncontext: SequenceTerm with EmptyContext = this
 
+  override def updateContext(ctx: MultiTerm): MultiTerm = ???
+
+  override def mergeAsLeftContext(other: MultiTerm): MultiTerm = ???
+
+  override def selectAsContextPattern(other: MultiTerm): MultiTerm = ???
+
+  override def mergeAsScopeAnd(other: MultiTerm): MultiTerm = ???
+
+  override def mergeAsScopeOr(other: MultiTerm): MultiTerm = ???
+
+  override def selectAsLeftPattern(other: MultiTerm): MultiTerm = ???
 }
 
 
@@ -42,7 +59,9 @@ case class ContextSequenceTerm(origin: SequenceTerm with EmptyContext, override 
   override def subterms(): IndexedSeq[MultiTerm] =
     origin.subterms().map(ContextMultiTerm.create(_,context))
 
+  override def pointMergeAsLeftContext(other: PointTerm): MultiTerm = ???
 
+  override def uncontext: SequenceTerm with EmptyContext = origin
 }
 
 

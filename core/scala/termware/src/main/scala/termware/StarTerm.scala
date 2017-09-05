@@ -29,7 +29,15 @@ case object DefaultStarTerm extends StarTerm with EmptyContext {
         case MultiKind.Point(p) => ContextStarTerm(p)
       }
 
+  override def mergeAsLeftContext(other: MultiTerm): MultiTerm = ???
 
+  override def selectAsContextPattern(other: MultiTerm): MultiTerm = ???
+
+  override def mergeAsScopeAnd(other: MultiTerm): MultiTerm = ???
+
+  override def mergeAsScopeOr(other: MultiTerm): MultiTerm = ???
+
+  override def selectAsLeftPattern(other: MultiTerm): MultiTerm = ???
 }
 
 case class ContextStarTerm(context:MultiTerm) extends  ContextMultiTerm(DefaultStarTerm,context) with StarTerm with MultiTermImpl[ContextStarTerm]

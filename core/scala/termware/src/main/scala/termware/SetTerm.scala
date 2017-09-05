@@ -17,22 +17,28 @@ trait SetTermImpl[S <: SetTermImpl[S]] extends SetTerm with MultiTermImpl[S]
 
 }
 
-case class DefaultSetTerm(data:NameIndexed[PointTerm]) extends SetTermImpl[DefaultSetTerm]
+case class DefaultSetTerm(data:NameIndexed[PointTerm]) extends SetTermImpl[DefaultSetTerm] with EmptyContext
 {
 
-  override def mapMerge(f: (MultiTerm) => MultiTerm): Unit = ???
+  override def mapMerge(f: (MultiTerm) => MultiTerm): MultiTerm = ???
 
   override def cardinality: Int = data.size
 
   override def multiKind: MultiKind = ???
 
-  override def select(pattern: MultiTerm): MultiTerm = ???
-
   override def context: MultiTerm = ???
 
-  override def contextOr(otherContext: MultiTerm): MultiTerm = ???
+  override def updateContext(ctx: MultiTerm): MultiTerm = ???
 
-  override def contextAnd(otherContext: MultiTerm): MultiTerm = ???
+  override def mergeAsLeftContext(other: MultiTerm): MultiTerm = ???
+
+  override def selectAsContextPattern(other: MultiTerm): MultiTerm = ???
+
+  override def mergeAsScopeAnd(other: MultiTerm): MultiTerm = ???
+
+  override def mergeAsScopeOr(other: MultiTerm): MultiTerm = ???
+
+  override def selectAsLeftPattern(other: MultiTerm): MultiTerm = ???
 }
 
 
