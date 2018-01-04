@@ -7,7 +7,7 @@ import scala.language.higherKinds
 trait TermTransformer {
 
 
-    def transform[Eff[_]](x:Eff[MultiTerm])(implicit effect:Effect[Eff]): Eff[MultiTerm]
+    def transform(x: MultiTerm): MultiTerm
 
 
 }

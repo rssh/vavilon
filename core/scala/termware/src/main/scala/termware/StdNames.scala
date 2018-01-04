@@ -6,4 +6,6 @@ object StdNames {
 
   val destination = AtomName("destination")
 
+  val message = AtomName("message")
+
 }

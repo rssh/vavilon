@@ -1,18 +1,19 @@
 
 lazy val commonSettings = Seq(
   organization := "com.github.rssh",
-  scalaVersion := "2.12.1",
-  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature"),
+  scalaVersion := "2.12.4",
+  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Ypartial-unification"),
   libraryDependencies ++= Seq(
     scalaVersion("org.scala-lang" % "scala-reflect" % _).value,
     "com.chuusai" %% "shapeless" % "2.3.2",
-    "org.typelevel" %% "cats-core" % "1.0.0-MF",
-    "org.typelevel" %% "cats-effect" % "0.4",
+    "org.typelevel" %% "cats-core" % "1.0.1",
+    "org.typelevel" %% "cats-effect" % "0.8",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
     "ch.qos.logback" % "logback-classic" % "1.1.7",
     "org.scalatest" %% "scalatest" % "3.0.1" % Test
   )
 )
+
 
 lazy val macro = (project in file("macro"))
   .settings(commonSettings: _*)

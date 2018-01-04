@@ -12,6 +12,8 @@ trait PrimitiveTerm[T] extends PointTerm with EmptyContext
 
   def termConstructor(x:T): PrimitiveTerm[T]
 
+  def valueAs[S<:T]:S = value.asInstanceOf[S]
+
   override def name: Name
 
   override def arity: Int = 0
@@ -22,18 +24,61 @@ trait PrimitiveTerm[T] extends PointTerm with EmptyContext
 
   override def uncontext: PrimitiveTerm[T] with EmptyContext = this
 
-  override def updateContext(ctx: MultiTerm): MultiTerm = this
+  override def in(ctx: MultiTerm): MultiTerm = this
 
-  override def mergeAsLeftContext(other: MultiTerm): MultiTerm = ???
+  override def orPoint(other: PointTerm): MultiTerm =
+    other.pointKind match {
+      case PointKind.Primitive(otherPrimitive) =>
+             if (otherPrimitive.primitiveTypeIndex != primitiveTypeIndex) {
+               SetTerm.create(this,otherPrimitive)
+             } else {
+                if (value == otherPrimitive.value) {
+                  this
+                } else {
+                  SetTerm.create(this,otherPrimitive)
+                }
+             }
+      case _ => SetTerm.create(this,other)
+    }
 
-  override def selectAsContextPattern(other: MultiTerm): MultiTerm = ???
+  override def andPoint(other: PointTerm): MultiTerm =
+    other.pointKind match {
+      case PointKind.Primitive(otherPrimitive) =>
+        if (otherPrimitive.primitiveTypeIndex != primitiveTypeIndex) {
+          EmptyTerm
+        } else {
+          if (value == otherPrimitive.value) {
+            this
+          } else {
+            EmptyTerm
+          }
+        }
+      case _ => EmptyTerm
+    }
 
-  override def mergeAsScopeAnd(other: MultiTerm): MultiTerm = ???
+  override def eval(other: MultiTerm): MultiTerm = ???
 
-  override def mergeAsScopeOr(other: MultiTerm): MultiTerm = ???
 
-  override def selectAsLeftPattern(other: MultiTerm): MultiTerm = ???
+  override def pointUnify(other:PointTerm): MultiTerm =
+    other.pointKind match {
+      case PointKind.Primitive(otherPrimitive) =>
+                 if (otherPrimitive.primitiveTypeIndex != this.primitiveTypeIndex) {
+                   EmptyTerm
+                 } else {
+                   val asT = otherPrimitive.asInstanceOf[PrimitiveTerm[T]]
+                   if (value == asT.value) {
+                     this
+                   } else {
+                     EmptyTerm
+                   }
+                   //primitiveUnify(otherPrimitive.asInstanceOf[PrimitiveTerm[T]])
+                 }
+      case _ => EmptyTerm
+    }
 
+  //def primitiveUnify(other: PrimitiveTerm[T]): MultiTerm
+
+  override def subst(x: MultiTerm): MultiTerm = this
 
 }
 
@@ -223,4 +268,18 @@ object OpaqueTermOps extends PrimitiveTermOps[OpaqueTerm,Array[Byte]]
   }
 
   override def termConstructor(x: Array[Byte]) = OpaqueTerm(x)
+}
+
+case class BooleanTerm(v:Boolean) extends PrimitiveTermImpl[BooleanTerm,Boolean](v)
+{
+  def ops = BooleanTermOps
+}
+
+object BooleanTermOps extends PrimitiveTermOps[BooleanTerm,Boolean]
+{
+  override val primitiveTypeIndex: Int = 20
+
+  override def ordering: Ordering[Boolean] = implicitly[Ordering[Boolean]]
+
+  override def termConstructor(x: Boolean): PrimitiveTerm[Boolean] = BooleanTerm(x)
 }

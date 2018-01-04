@@ -1,9 +1,10 @@
 package termware
 
-trait EmptyTerm extends MultiTerm
+trait EmptyTerm extends MultiTerm with EmptyContext
 
 
 case object EmptyTerm extends EmptyTerm {
+
   override def name: Name = EmptyName
 
   override def cardinality: Int = 0
@@ -12,18 +13,21 @@ case object EmptyTerm extends EmptyTerm {
 
   override def context: MultiTerm = this
 
-  override def updateContext(ctx: MultiTerm): MultiTerm = ???
+  override def in(ctx: MultiTerm): MultiTerm = this
 
-  override def uncontext: MultiTerm with EmptyContext = ???
+  override def inside(ctx: MultiTerm): MultiTerm = this
 
-  override def mergeAsLeftContext(other: MultiTerm): MultiTerm = ???
+  override def uncontext: EmptyTerm = this
 
-  override def selectAsContextPattern(other: MultiTerm): MultiTerm = ???
+  override def or(other: MultiTerm): MultiTerm = other
 
-  override def mergeAsScopeAnd(other: MultiTerm): MultiTerm = ???
+  override def and(other: MultiTerm): MultiTerm = other
 
-  override def mergeAsScopeOr(other: MultiTerm): MultiTerm = ???
+  override def eval(other: MultiTerm): MultiTerm = this
 
-  override def selectAsLeftPattern(other: MultiTerm): MultiTerm = ???
+  override def unify(x: MultiTerm): MultiTerm = this
+
+  override def subst(x: MultiTerm): MultiTerm = this
+
+  override def check(x: PointTerm): Boolean = true
 }
-
