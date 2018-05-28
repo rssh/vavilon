@@ -49,4 +49,14 @@ object KernelNames {
   val checkName = AtomName("check")
   val checkNameTerm = checkName.toTerm.in(kernelContext)
 
+  val elementName = AtomName("element")
+  val elementNameTerm = elementName.toTerm.in(kernelContext)
+
+  val constraintsName = AtomName("constraints")
+  val constraintsNameTerm = constraintsName.toTerm.in(kernelContext)
+
+  val lengthName = AtomName("length")
+  val lengthNameTerm = lengthName.toTerm.in(kernelContext)
+
+
 }

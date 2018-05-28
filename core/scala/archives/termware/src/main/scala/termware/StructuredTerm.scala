@@ -5,6 +5,8 @@ import cats.{Applicative, Eval, Traverse}
 trait StructuredTerm extends PointTerm
 {
 
+  type Self <: StructuredTerm
+
   def get(n:Name): MultiTerm
 
   def names():IndexedSeq[Name]
@@ -13,7 +15,7 @@ trait StructuredTerm extends PointTerm
 
   def namedSubterms():NameIndexed[MultiTerm]
 
-  def map(f:MultiTerm => MultiTerm): MultiTerm
+  //def map(f:MultiTerm => MultiTerm): MultiTerm
 
   override def pointKind: PointKind = PointKind.Structured(this)
 
@@ -21,9 +23,9 @@ trait StructuredTerm extends PointTerm
 
   def updated(name:Name,value:MultiTerm): StructuredTerm
 
-  def newSubterms(newSubterms: IndexedSeq[MultiTerm]): StructuredTerm
+  def newSubterms(newSubterms: IndexedSeq[MultiTerm]): Self
 
-  def newNamedSubterms(newNamedSubterms: NameIndexed[MultiTerm]): StructuredTerm
+  def newNamedSubterms(newNamedSubterms: NameIndexed[MultiTerm]): Self
 
 }
 
@@ -47,15 +49,11 @@ object StructuredTerm
 }
 
 
-trait StructuredTermImpl[S <: StructuredTermImpl[S]] extends StructuredTerm with PointTermImpl[S] {
 
-  this: S =>
-
-
-}
-
-case class ContextlessStructuredTerm(name: Name, indexes:NameIndexed[MultiTerm]) extends StructuredTermImpl[ContextlessStructuredTerm] with EmptyContext
+case class ContextlessStructuredTerm(name: Name, indexes:NameIndexed[MultiTerm]) extends StructuredTerm with EmptyContext
 {
+
+  override type Self = ContextlessStructuredTerm
 
   override def andPoint(other: PointTerm): MultiTerm =
     other.pointKind match {
@@ -121,7 +119,11 @@ case class ContextlessStructuredTerm(name: Name, indexes:NameIndexed[MultiTerm])
 
   override def subst(x: MultiTerm): MultiTerm = ???
 
-  override def eval(other: MultiTerm): MultiTerm = ???
+  override def apply(other: MultiTerm): MultiTerm = ???
+
+  override def newSubterms(newSubterms: IndexedSeq[MultiTerm]): ContextlessStructuredTerm = ???
+
+  override def newNamedSubterms(newNamedSubterms: NameIndexed[MultiTerm]): ContextlessStructuredTerm = ???
 }
 
 object ContextlessStructuredTerm
@@ -148,8 +150,10 @@ object ContextlessStructuredTerm
 
 }
 
-case class ContextStructuredTerm(origin: StructuredTerm with EmptyContext, override val context: MultiTerm) extends ContextPointTerm(origin,context) with StructuredTermImpl[ContextStructuredTerm]
+case class ContextStructuredTerm(origin: StructuredTerm with EmptyContext, override val context: MultiTerm) extends ContextPointTerm(origin,context) with StructuredTerm
 {
+
+  type Self = ContextStructuredTerm
 
   override def get(n: Name): MultiTerm =
     ContextMultiTerm.create(origin.get(n),context)
@@ -158,7 +162,7 @@ case class ContextStructuredTerm(origin: StructuredTerm with EmptyContext, overr
     origin.subterms().map(ContextMultiTerm.create(_,context))
 
 
-  override def eval(other: MultiTerm): MultiTerm = ???
+  override def apply(other: MultiTerm): MultiTerm = ???
 
   override def updateContext(ctx: MultiTerm): Unit = ???
 
@@ -186,6 +190,9 @@ case class ContextStructuredTerm(origin: StructuredTerm with EmptyContext, overr
     */
   override def subst(x: MultiTerm): MultiTerm = ???
 
+  override def newSubterms(newSubterms: IndexedSeq[MultiTerm]): ContextStructuredTerm = ???
+
+  override def newNamedSubterms(newNamedSubterms: NameIndexed[MultiTerm]): ContextStructuredTerm = ???
 }
 
 object ContextStructuredTerm

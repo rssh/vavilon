@@ -16,6 +16,7 @@ trait StarTerm extends MultiTerm
     */
   override def check(x: PointTerm): Boolean = false
 
+  override def apply(other: MultiTerm): MultiTerm = EmptyTerm
 
 }
 
@@ -39,8 +40,6 @@ case object DefaultStarTerm extends StarTerm with EmptyContext {
 
   override def or(other:MultiTerm) = this
   override def and(other:MultiTerm) = other
-
-  override def eval(other: MultiTerm): MultiTerm = other // TODO: think about passing data from context
 
   override def unify(x: MultiTerm): MultiTerm = x
 
@@ -120,10 +119,8 @@ case class ContextStarTerm(context:MultiTerm) extends  ContextMultiTerm(DefaultS
     }
   }
 
-  override def eval(other: MultiTerm): MultiTerm = ???
 
   override def updateContext(ctx: MultiTerm): Unit = ???
-
 
   override def narrow(x: PointTerm): PointTerm = ???
 

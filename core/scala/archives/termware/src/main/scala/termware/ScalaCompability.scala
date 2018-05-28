@@ -11,6 +11,7 @@ object ScalaCompability {
       case MultiKind.Star(s) => false // impossible.
       case MultiKind.Set(s) => ! s.find(asBoolean).isEmpty
       case MultiKind.SeqOr(s) => ! s.find(existsTrue).isEmpty
+      case MultiKind.Point(pt) => asBoolean(pt)
     }
   }
 
@@ -22,6 +23,7 @@ object ScalaCompability {
         } else {
           false
         }
+      case _ => false
     }
 
 }

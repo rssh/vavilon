@@ -16,6 +16,8 @@ trait PrimitiveTerm[T] extends PointTerm with EmptyContext
 
   override def name: Name
 
+  override def nameTerm = this
+
   override def arity: Int = 0
 
   override def pointKind: PointKind = PointKind.Primitive(this)
@@ -56,7 +58,8 @@ trait PrimitiveTerm[T] extends PointTerm with EmptyContext
       case _ => EmptyTerm
     }
 
-  override def eval(other: MultiTerm): MultiTerm = ???
+  // TODO:  think about existence of primitives in context ?
+  override def apply(other: MultiTerm): MultiTerm = EmptyTerm
 
 
   override def pointUnify(other:PointTerm): MultiTerm =
@@ -87,6 +90,8 @@ trait PrimitiveTerm[T] extends PointTerm with EmptyContext
 abstract class PrimitiveTermImpl[S<:PrimitiveTermImpl[S,T],T](val value: T) extends PrimitiveTerm[T] with PointTermImpl[S] {
 
   this: S =>
+
+  override type Self = PrimitiveTermImpl[S,T]
 
   override def name: Name = PrimitiveName(value)(ops)
 

@@ -1,6 +1,6 @@
 package termware
 
-import cats.kernel.CommutativeMonoid
+import scala.language.higherKinds
 import cats.{Applicative, CommutativeApplicative, Eval, Traverse, UnorderedTraverse}
 
 /**

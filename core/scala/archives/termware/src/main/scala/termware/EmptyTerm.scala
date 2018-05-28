@@ -7,6 +7,8 @@ case object EmptyTerm extends EmptyTerm {
 
   override def name: Name = EmptyName
 
+  override def nameTerm = KernelNames.emptyNameTerm
+
   override def cardinality: Int = 0
 
   override def multiKind: MultiKind = MultiKind.Empty(this)
@@ -23,7 +25,7 @@ case object EmptyTerm extends EmptyTerm {
 
   override def and(other: MultiTerm): MultiTerm = other
 
-  override def eval(other: MultiTerm): MultiTerm = this
+  override def apply(other: MultiTerm): MultiTerm = this
 
   override def unify(x: MultiTerm): MultiTerm = this
 

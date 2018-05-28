@@ -54,17 +54,14 @@ trait SeqOrTerm extends MultiTerm {
 
 
 
-trait SeqOrTermImpl[This<:SeqOrTermImpl[This]] extends SeqOrTerm
-{
 
 
-}
-
-
-case class DefaultSeqOrTerm(override val head:MultiTerm, override val tail:MultiTerm) extends SeqOrTermImpl[DefaultSeqOrTerm] with EmptyContext
+case class DefaultSeqOrTerm(override val head:MultiTerm, override val tail:MultiTerm) extends SeqOrTerm with EmptyContext
 {
 
   override def name: Name = OrElseName
+
+  override def nameTerm = KernelNames.orElseNameTerm
 
   override def cardinality: Int = 1 + tail.cardinality
 
@@ -73,8 +70,6 @@ case class DefaultSeqOrTerm(override val head:MultiTerm, override val tail:Multi
   override def multiKind: MultiKind = MultiKind.SeqOr(this)
 
   override def in(ctx: MultiTerm): MultiTerm = map (_ in ctx)
-
-  override def inside(ctx: MultiTerm): MultiTerm = map( _ inside ctx)
 
   override def or(other: MultiTerm): MultiTerm = ???
 

@@ -15,15 +15,12 @@ trait ContradictionTerm extends MultiTerm {
 
 }
 
-trait ContradictionTermImpl[S <: ContradictionTermImpl[S]] extends ContradictionTerm with MultiTermImpl[S] {
 
-  this: S =>
-
-
-}
-
-case class ContextContradictionTerm(context:MultiTerm) extends ContradictionTermImpl[ContextContradictionTerm]
+case class ContextContradictionTerm(context:MultiTerm) extends ContradictionTerm
 {
+
+  override lazy val nameTerm = ContextAtomTerm(KernelNames.contradictionNameTerm,context)
+
   override def in(ctx: MultiTerm): MultiTerm = ???
 
   override def inside(ctx: MultiTerm): MultiTerm = in(ctx)
@@ -41,9 +38,11 @@ case class ContextContradictionTerm(context:MultiTerm) extends ContradictionTerm
 
   override def and(other: MultiTerm): MultiTerm = this
 
-  override def eval(other: MultiTerm): MultiTerm = this
+  // (*) is not applicable directly.
+  // (todo: rethink)
+  override def apply(other: MultiTerm): MultiTerm = EmptyTerm
 
-  // TODO: rething
+  // TODO: rethink
   override def unify(x: MultiTerm): MultiTerm = this
 
   override def subst(x: MultiTerm): MultiTerm = this
@@ -67,6 +66,7 @@ object ContextContradictionTerm
 case object ContextlessContraditionTerm extends ContradictionTerm with EmptyContext
 {
 
+  override def nameTerm = KernelNames.contradictionNameTerm
 
   override def in(ctx: MultiTerm): MultiTerm = ContextContradictionTerm(ctx)
 
@@ -76,7 +76,7 @@ case object ContextlessContraditionTerm extends ContradictionTerm with EmptyCont
 
   override def and(other: MultiTerm): MultiTerm = this
 
-  override def eval(other: MultiTerm): MultiTerm = ???
+  override def apply(other: MultiTerm): MultiTerm = this
 
   override def unify(x: MultiTerm): MultiTerm = this
 

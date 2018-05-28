@@ -4,6 +4,8 @@ trait AtomTerm extends PointTerm
 {
   def arity = 0
 
+  override def nameTerm = this
+
   override def uncontext: AtomTerm with EmptyContext
 
   override def pointKind: PointKind = PointKind.Atom(this)
@@ -28,7 +30,7 @@ trait AtomTerm extends PointTerm
     }
   }
 
-  override def eval(other: MultiTerm): MultiTerm =
+  override def apply(other: MultiTerm): MultiTerm =
     other.multiKind match {
       case MultiKind.Empty(e) => this
       case MultiKind.Contradiction(ct) => ct
@@ -38,15 +40,11 @@ trait AtomTerm extends PointTerm
 
 }
 
-trait AtomTermImpl[S <: AtomTermImpl[S]] extends AtomTerm with PointTermImpl[S]
+
+case class DefaultAtomTerm(val name:Name) extends AtomTerm with EmptyContext
 {
-  this: S =>
 
-
-}
-
-case class DefaultAtomTerm(val name:Name) extends AtomTermImpl[DefaultAtomTerm] with EmptyContext
-{
+  override type Self = DefaultAtomTerm
 
   override def in(ctx: MultiTerm): PointTerm =
                                      new ContextAtomTerm(this,ctx)
@@ -63,8 +61,10 @@ case class DefaultAtomTerm(val name:Name) extends AtomTermImpl[DefaultAtomTerm] 
 
 }
 
-case class ContextAtomTerm(origin:AtomTerm with EmptyContext, override val context: MultiTerm) extends ContextPointTerm(origin,context) with AtomTermImpl[ContextAtomTerm]
+case class ContextAtomTerm(origin:AtomTerm with EmptyContext, override val context: MultiTerm) extends PointTerm with AtomTerm
 {
+
+  type Self = ContextAtomTerm
 
   override def arity: Int = 0
 

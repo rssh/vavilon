@@ -1,17 +1,26 @@
 package termware
 
+import termware.missing.RefOrNull
+
 import scala.collection.immutable.Queue
 
 trait MultiTerm {
 
   def name: Name
+
+  def nameTerm: PointTerm
+
   def path: Queue[PointTerm]
 
   def cardinality: Int
+
   def multiKind: MultiKind
 
   def isEmpty: Boolean  = this == EmptyTerm
 
+  def subterm(n: Name): MultiTerm
+
+  def subterm(i:Int): MultiTerm
 
   def isContradiction: Boolean =
     multiKind match {
@@ -44,11 +53,9 @@ trait MultiTerm {
 
 
   def context: MultiTerm
+
   def uncontext: MultiTerm with EmptyContext
 
-
-  //TODO: think
- // def internalResolve():MultiTerm
 
   /**
     * place `this` in context `ctx`
@@ -56,12 +63,6 @@ trait MultiTerm {
     * otherwise result will be Contradiction,
     */
   def in(ctx:MultiTerm): MultiTerm
-
-  /**
-    * place `this` inside context,
-    *  if this already have context, it is shallowed by new context.
-    */
-  def inside(ctx:MultiTerm): MultiTerm
 
   /**
     * resolve x in context of current term.
@@ -85,9 +86,24 @@ trait MultiTerm {
     */
   def check(x:PointTerm): Boolean
 
+  /**
+    * select multiterms, compatibe to context
+    * @param x
+    * @return
+    */
+  def selectCompatible(x:MultiTerm): MultiTerm =
+    x.multiKind match {
+      case MultiKind.Empty(e) => e
+      case MultiKind.Contradiction(ct) => ct
+      case MultiKind.Star(s) => StarTerm(s.context.and(x.context))
+      case MultiKind.Set(s) => s.mapOr(_.selectCompatible(x))
+      case MultiKind.SeqOr(s) =>
+    }
+
   // apply current term to this.
   //  (semantics - return empty term if not applicable)
   def apply(x:MultiTerm): MultiTerm
+
 
   //
   def or(other:MultiTerm):MultiTerm
@@ -96,6 +112,8 @@ trait MultiTerm {
 
   def orElse(other: MultiTerm): MultiTerm =
     SeqOrTerm.create(this,other)
+
+  def select(head: MultiTerm): MultiTerm = and(head ~> DefaultStarTerm)
 
   /**
     * create arrow from this to right.
@@ -121,14 +139,31 @@ trait MultiTerm {
 
 
 
-trait MultiTermImpl[S <: MultiTermImpl[S]] extends MultiTerm {
+object MultiTerm
+{
 
-    thisMultiTerm: S =>
-    //type D
-    type Self = S //<: MultiTerm.Aux[D]
+  object IsEmpty{
+    def unapply(t: MultiTerm): RefOrNull[MultiTerm] =
+      if (t.isEmpty) new RefOrNull[MultiTerm](null) else new RefOrNull[MultiTerm](t)
+  }
+
+  object NonEmpty{
+    def unapply(t: MultiTerm): RefOrNull[MultiTerm] =
+      if (t.isEmpty) new RefOrNull[MultiTerm](null) else new RefOrNull(t)
+  }
 
 
 }
+
+
+trait MultiTermImpl[S <: MultiTermImpl[S]] extends MultiTerm {
+
+    thisMultiTerm: S =>
+
+    type Self <: MultiTermImpl[S]
+
+}
+
 
 
 

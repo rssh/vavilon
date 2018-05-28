@@ -18,23 +18,8 @@ object EarlyTopDown extends EvaluationStrategy {
     }
   }
 
-  def runStepIO(ruleset: MultiTerm, arg: MultiTerm): Eff[MultiTerm] = {
-    arg.multiKind match {
-      case MultiKind.Empty(e) => IO.pure(EvaluationResult(e,false))
-      case MultiKind.Contradiction(ct)  => IO.pure(EvaluationResult(ct,false))
-      case MultiKind.Star(s) => IO.pure(EvaluationResult(s,false))
-      case MultiKind.Set(s) =>
-        val s0: Eff[MultiTerm] = IO.pure(EvaluationResult(EmptyTerm,false))
-        s.mapReduce(s0)(runStepIO(ruleset,_)){
-             (ex,ey) => ex.flatMap(x => if (x.changed) IO.pure(x) else ey )
-        }
-      case MultiKind.SeqOr(s) =>
-        runStepIO(ruleset,s.head).flatMap(r => if (r.changed) IO.pure(r) else runStepIO(ruleset,s.tail))
-      case MultiKind.Point(pt) => runPointIO(ruleset,pt)
-    }
-  }
 
-  def runPointIO(ruleset: MultiTerm, arg: PointTerm): Eff[MultiTerm] = {
+  override def runPointIO(ruleset: MultiTerm, arg: PointTerm): Eff[MultiTerm] = {
     arg.pointKind match {
       case PointKind.Structured(st) =>
         val s0 = IO.pure(EvaluationResult(NameIndexed.empty[MultiTerm],false))
@@ -49,14 +34,14 @@ object EarlyTopDown extends EvaluationStrategy {
         }.map{ r =>
           r.map(v => if (r.changed) st.newNamedSubterms(v) else st)
         }
-      case PointKind.Sequence(sq) => runSeqIO(ruleset,IndexedSeq(),sq.subterms()).map{ r =>
+      case PointKind.Sequence(sq) => runSeqIO(ruleset,Vector(),sq.subterms()).map{ r =>
         EvaluationResult(if (r.changed) sq.newSubterms(r.value) else sq, r.changed)
       }
 
     }
   }
 
-  def runSeqIO(ruleset: MultiTerm, prev:IndexedSeq[MultiTerm], seq:IndexedSeq[MultiTerm]):Eff[IndexedSeq[MultiTerm]] = {
+  def runSeqIO(ruleset: MultiTerm, prev:Vector[MultiTerm], seq:Vector[MultiTerm]):Eff[Vector[MultiTerm]] = {
     if (seq.isEmpty) {
       IO.pure(EvaluationResult(prev,false))
     } else {

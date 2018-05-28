@@ -10,10 +10,7 @@ object ScopeAnd  {
     def apply(x: MultiTerm, y: MultiTerm): MultiTerm = ???
 
 
-
     def applyPointSet(x:PointTerm, y: IndexedSeq[PointTerm]): PointTerm = ???
-
-
 
 
 }

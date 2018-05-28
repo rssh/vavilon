@@ -4,6 +4,8 @@ trait PointTerm extends MultiTerm {
 
   def arity: Int
 
+  def subterms(): Vector[MultiTerm]
+
   def pointKind: PointKind
 
   override def uncontext: PointTerm with EmptyContext
@@ -15,6 +17,7 @@ trait PointTerm extends MultiTerm {
   override def in(context: MultiTerm): MultiTerm
 
   def inside(context: MultiTerm): MultiTerm
+
 
   /**
     * Context from PointTerm means nothing.

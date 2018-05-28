@@ -5,6 +5,9 @@ trait ArrowTerm extends PointTerm
   def left: MultiTerm
   def right: MultiTerm
 
+  override def name = ArrowName
+  override def arity: Int = 0
+
   override def pointKind: PointKind = PointKind.Arrow(this)
 
   override def uncontext: ArrowTerm with EmptyContext
@@ -96,19 +99,14 @@ object ArrowTerm
 
 }
 
-trait ArrowTermImpl[S <: ArrowTermImpl[S]] extends ArrowTerm with PointTermImpl[S]
+
+case class DefaultArrowTerm(val left: MultiTerm, right: MultiTerm) extends ArrowTerm with EmptyContext
 {
-  this: S =>
-
-  override def name = ArrowName
-  override def arity: Int = 0
 
 
-}
+  override type Self = DefaultArrowTerm
 
-
-case class DefaultArrowTerm(val left: MultiTerm, right: MultiTerm) extends ArrowTermImpl[DefaultArrowTerm] with EmptyContext
-{
+  override lazy val nameTerm = DefaultArrowTerm(left.nameTerm,right.nameTerm)
 
   override def uncontext: DefaultArrowTerm = this
 
@@ -116,14 +114,16 @@ case class DefaultArrowTerm(val left: MultiTerm, right: MultiTerm) extends Arrow
 
   override def resolve(x: PointTerm): MultiTerm = EmptyTerm
 
+  override def apply(x:MultiTerm): MultiTerm = {
+    (left unify x).multiKind match {
+      case MultiKind.Empty(e) => e
+      case MultiKind.Contradiction(ct) => ct
+      case other => right.subst(other.x.context)
+    }
+  }
 
-  /**
-    * Substitute terms
-    *
-    * @param x - substitution
-    * @return such term,
-    */
-  override def subst(x: MultiTerm): MultiTerm = ???
+  override def subst(x: MultiTerm): MultiTerm =
+     new DefaultArrowTerm(left.subst(x), right.subst(x))
 
 
   override def check(x: PointTerm): Boolean =
@@ -143,50 +143,24 @@ case class DefaultArrowTerm(val left: MultiTerm, right: MultiTerm) extends Arrow
           case MultiKind.Point(pt) => ScalaCompability.asBoolean(pt)
           case _ => false
         }
+      case MultiKind.Point(pt) =>
+        ScalaCompability.existsTrue(KernelLanguage.eval(pt.apply(x)))
     }
  }
 
-case class ContextArrowTerm(origin: ArrowTerm with EmptyContext, override val context:MultiTerm) extends ContextPointTerm(origin,context) with ArrowTermImpl[ContextArrowTerm]
-{
-
-  override def left: MultiTerm = ContextMultiTerm.create(origin.left,context)
-
-  override def right: MultiTerm = ContextMultiTerm.create(origin.right,context)
-
-  override def uncontext: ArrowTerm with EmptyContext = origin
-
-  override def resolve(x: PointTerm): MultiTerm = ???
-
-  override def eval(other: MultiTerm): MultiTerm = ???
-
-  override def updateContext(ctx: MultiTerm): Unit = ???
-
-  override def narrow(x: PointTerm): PointTerm = ???
-
-
-  /**
-    * true, if <code>x</code> is compatible with <code>this</code> as context.
-    *
-    * @param x
-    * @return
-    */
-  override def check(x: PointTerm): Boolean = ???
-}
 
 object ContextArrowTerm
 {
 
   def create(a: ArrowTerm,context:MultiTerm):MultiTerm =
-    if (a.context.isEmpty) {
       context.multiKind match {
         case MultiKind.Empty(e) => a
         case MultiKind.Contradiction(e) => e
         case MultiKind.Star(s) => create(a, s.context)
-        case _ => ContextArrowTerm(a.uncontext, context)
+        case _ =>
+          // TODO: call check before crrate ?
+          DefaultArrowTerm(a.left.in(context),a.right.in(context))
       }
-    } else {
-      a.in(context)
-    }
 
 }
 

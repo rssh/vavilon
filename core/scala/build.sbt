@@ -6,8 +6,8 @@ lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     scalaVersion("org.scala-lang" % "scala-reflect" % _).value,
     "com.chuusai" %% "shapeless" % "2.3.2",
-    "org.typelevel" %% "cats-core" % "1.0.1",
-    "org.typelevel" %% "cats-effect" % "0.8",
+    "org.typelevel" %% "cats-core" % "1.1.0",
+    "org.typelevel" %% "cats-effect" % "1.0.0-RC",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
     "ch.qos.logback" % "logback-classic" % "1.1.7",
     "org.scalatest" %% "scalatest" % "3.0.1" % Test
@@ -15,23 +15,23 @@ lazy val commonSettings = Seq(
 )
 
 
-lazy val macro = (project in file("macro"))
+lazy val macroses = (project in file("macroses"))
   .settings(commonSettings: _*)
   .settings(
-    name := "macro"
+    name := "termware-macroses"
   )
 
-lazy val termware = (project in file("termware"))
+lazy val termware = (project in file("termware2"))
   .settings(commonSettings: _*)
   .settings(
     name := "termware"
-  ).dependsOn(macro)
+  ).dependsOn(macroses)
 
 lazy val examples = (project in file("examples"))
   .settings(commonSettings: _*)
   .settings(
     name := "examples"
-  ).dependsOn(macro)
+  ).dependsOn(macroses)
 
 
 lazy val root = Project(id = "vavilon", base = file("."))
@@ -40,10 +40,8 @@ lazy val root = Project(id = "vavilon", base = file("."))
     name := "vavilon"
   )
   .aggregate(
-    macro,
+    macroses,
     termware,
     examples
   )
 
-
-  

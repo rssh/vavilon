@@ -2,6 +2,9 @@ package termware
 
 trait SetTerm extends MultiTerm {
 
+  override def name: Name = SetName
+
+  override def multiKind: MultiKind = MultiKind.Set(this)
 
   def find(p: PointTerm => Boolean): MultiTerm
 
@@ -19,19 +22,10 @@ trait SetTerm extends MultiTerm {
 }
 
 
-trait SetTermImpl[S <: SetTermImpl[S]] extends SetTerm with MultiTermImpl[S]
+case class DefaultSetTerm(data:Seq[PointTerm]) extends SetTerm with EmptyContext
 {
-  this: S =>
 
-  override def name: Name = SetName
-
-  override def multiKind: MultiKind = MultiKind.Set(this)
-
-
-}
-
-case class DefaultSetTerm(data:Seq[PointTerm]) extends SetTermImpl[DefaultSetTerm] with EmptyContext
-{
+  override type Self = DefaultSetTerm
 
   override def cardinality: Int = data.size
 
@@ -46,7 +40,8 @@ case class DefaultSetTerm(data:Seq[PointTerm]) extends SetTermImpl[DefaultSetTer
 
   override def and(other: MultiTerm): MultiTerm = ???
 
-  override def eval(other: MultiTerm): MultiTerm = ???
+  override def apply(other: MultiTerm): MultiTerm =
+    mapOr(_ apply other)
 
   override def unify(x: MultiTerm): MultiTerm =
     x.multiKind match {
@@ -61,9 +56,9 @@ case class DefaultSetTerm(data:Seq[PointTerm]) extends SetTermImpl[DefaultSetTer
   override def find(p: (PointTerm) => Boolean): MultiTerm =
    data.find(p).getOrElse(EmptyTerm)
 
-  override def mapReduce(f: (PointTerm) => MultiTerm)(r: (MultiTerm, MultiTerm) => MultiTerm): MultiTerm =
+  override def mapReduce[B](s0:B)(f: (PointTerm) => B)(r: (B, B) => B): B =
   {
-    data.map(f).fold(EmptyTerm)(r)
+    data.map(f).fold(s0)(r)
   }
 
 }
