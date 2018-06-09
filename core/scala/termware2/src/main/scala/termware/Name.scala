@@ -73,6 +73,8 @@ abstract class SingletonName(override val typeIndex: Int) extends Name with Sing
 
   override final def singletonName: SingletonName = this
 
+  override def context(): MultiTerm = EmptyTerm
+
 }
 
 final case class AtomName(s:String) extends StringLikeName(s) with AtomTerm
@@ -81,6 +83,8 @@ final case class AtomName(s:String) extends StringLikeName(s) with AtomTerm
   override def kind = AtomName
 
   override def typeIndex: Int = TypeIndexes.ATOM
+
+  override def context(): MultiTerm = EmptyTerm
 
 }
 

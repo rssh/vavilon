@@ -30,12 +30,15 @@ trait StructuredTerm extends PointTerm {
 
 object StructuredTerm extends StructuredTermKind
 {
-  override def structured(x: PointTerm): StructuredTerm = {
-    x.asInstanceOf[StructuredTerm]
-  }
+
+  override def cast(x: PointTerm): StructuredTerm = x.asInstanceOf[StructuredTerm]
+
+
 }
 
-case class PlainStructuredTerm(override val name:Name, indexes:NameIndexed[MultiTerm]) extends StructuredTerm
+case class PlainStructuredTerm(override val name:Name,
+                               indexes:NameIndexed[MultiTerm],
+                               override val context: MultiTerm = EmptyTerm) extends StructuredTerm
 {
   override type Self = PlainStructuredTerm
 
@@ -57,7 +60,6 @@ case class PlainStructuredTerm(override val name:Name, indexes:NameIndexed[Multi
 
   override def newNamedSubterms(newIndexes: NameIndexed[MultiTerm]): Self =
     PlainStructuredTerm(name,newIndexes)
-
 
 }
 

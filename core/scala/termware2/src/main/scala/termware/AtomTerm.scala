@@ -8,7 +8,7 @@ trait AtomTerm extends PointTerm
 
 }
 
-class ContextAtomTerm(override val name: AtomName, context:MultiTerm = EmptyTerm) extends AtomTerm {
+class ContextAtomTerm(override val name: AtomName, override val context:MultiTerm = EmptyTerm) extends AtomTerm {
 
   override def kind = ContextAtomTerm
 

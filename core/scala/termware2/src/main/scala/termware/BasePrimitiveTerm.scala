@@ -1,5 +1,7 @@
 package termware
 
+import cats.effect.IO
+
 import scala.reflect.runtime.universe
 
 trait PrimitiveTerm[T] extends PointTerm
@@ -16,6 +18,39 @@ trait PrimitiveTerm[T] extends PointTerm
 
   override def arity: Int = 0
 
+  override lazy val resolved: PrimitiveTerm[T] = this
+
+  /*
+  override def unifyResolved(term: MultiTerm): MultiTerm = {
+    term.kind match {
+      case x: EmptyTermKind => EmptyTerm
+      case x: ContradictionTermKind => x.contradiction(term)
+      case x: StarTermKind =>
+        val checker = x.star(term).context.resolve(KernelNames.checkName)
+        checker.kind match {
+          case c: EmptyTermKind => this
+          case other =>
+            KernelLanguage.evalCondition(checker.apply(this)) match {
+              case r: PointTermKind =>
+                val point = r.pointTerm(term)
+                point.kind match {
+                  case prk: PrimitiveTermKind =>
+                    val primitive = prk.primitive(point)
+                    if (primitive.primitiveTypeIndex == BooleanTermOps.primitiveTypeIndex) {
+                      val r = primitive.value.asInstanceOf[Boolean]
+                      if (r) this else EmptyTerm
+                    } else EmptyTerm
+                }
+            }
+        }
+      case x: PointTermKind =>
+        pointUnifyResolved(x.pointTerm(this))
+    }
+  }
+
+  def pointUnifyResolved(term:PointTerm): MultiTerm
+  */
+
 }
 
 
@@ -28,6 +63,7 @@ trait BasePrimitiveTerm[T] extends PrimitiveTerm[T] with PrimitiveName[T]
 
   override def termConstructor(x:T): BasePrimitiveTerm[T]
 
+  override def context: MultiTerm = EmptyTerm
 
 }
 
@@ -54,6 +90,7 @@ abstract class BasePrimitiveTermImpl[S<:BasePrimitiveTermImpl[S,T],T](val value:
   def ordering: Ordering[T] = ops.ordering
 
   def termConstructor(x:T): BasePrimitiveTerm[T] = ops.termConstructor(x)
+
 
 
 }
@@ -243,7 +280,7 @@ object BooleanTermOps extends PrimitiveTermOps[BooleanTermBase,Boolean]
 }
 
 
-final case class ContextPrimitiveTerm[T](base: BasePrimitiveTerm[T],context: MultiTerm) extends PrimitiveTerm[T]
+final case class ContextPrimitiveTerm[T](base: BasePrimitiveTerm[T], override val context: MultiTerm) extends PrimitiveTerm[T]
 {
   override def value: T = base.value
 
