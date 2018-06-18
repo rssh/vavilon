@@ -7,7 +7,7 @@ trait StarTerm extends MultiTerm
 
 }
 
-class PlainStarTerm(val context: MultiTerm) extends StarTerm {
+class PlainStarTerm(override val context: MultiTerm) extends StarTerm {
 
   override def kind: MultiTermKind = StarTerm
 
@@ -18,6 +18,12 @@ class PlainStarTerm(val context: MultiTerm) extends StarTerm {
                                 EmptyTerm
 
   override def resolved(): MultiTerm = this
+
+  override def unify(term: MultiTerm): MultiTerm = term
+
+  override def contextMerge(otherContext: MultiTerm): MultiTerm = otherContext
+
+  override def subst(context: MultiTerm): MultiTerm = this
 
 }
 

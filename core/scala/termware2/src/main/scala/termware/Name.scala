@@ -22,6 +22,7 @@ sealed trait Name extends Ordered[Name] with PointTerm
 
   override def arity = 0
 
+
 }
 
 abstract class StringLikeName(val value:String) extends Name
@@ -73,7 +74,31 @@ abstract class SingletonName(override val typeIndex: Int) extends Name with Sing
 
   override final def singletonName: SingletonName = this
 
+  override final def pointUnify(term: PointTerm): MultiTerm = {
+    term.kind match {
+      case x: SingletonNameKind =>
+          if (x.cast(term).typeIndex == typeIndex) {
+            this
+          } else {
+            EmptyTerm
+          }
+      case _ => EmptyTerm
+    }
+  }
+
+  // names are not depends from context.
   override def context(): MultiTerm = EmptyTerm
+
+  override def subst(context: MultiTerm): MultiTerm = {
+    val r = context.resolve(this)
+    if (r.isEmpty() || r.isContradiction()) {
+      this
+    } else {
+      r
+    }
+  }
+
+
 
 }
 
@@ -82,15 +107,19 @@ final case class AtomName(s:String) extends StringLikeName(s) with AtomTerm
 
   override def kind = AtomName
 
+  override def name: AtomName = this
+
   override def typeIndex: Int = TypeIndexes.ATOM
 
-  override def context(): MultiTerm = EmptyTerm
+  def context(): MultiTerm = EmptyTerm
+
 
 }
 
 object AtomName extends AtomTermKind
 {
   override def atomTerm(x: PointTerm): AtomTerm = x.asInstanceOf[AtomName]
+
 }
 
 final object SeqName extends SingletonName(TypeIndexes.SEQ)

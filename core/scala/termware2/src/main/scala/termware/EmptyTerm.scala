@@ -11,5 +11,13 @@ final object EmptyTerm extends MultiTerm
 
   override def apply(term: PointTerm): MultiTerm = EmptyTerm
 
+  override def contextMerge(otherContext: MultiTerm): MultiTerm = otherContext
+
+  override def context(): MultiTerm = this
+
+  override def subst(context: MultiTerm): MultiTerm = this
+
+  override def unify(term: MultiTerm): MultiTerm = this
+
 }
 

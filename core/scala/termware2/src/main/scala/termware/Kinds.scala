@@ -13,12 +13,6 @@ sealed trait MultiTermKind
 
 }
 
-object MultiTermKind
-{
-
-
-}
-
 
 sealed trait PointTermKind extends MultiTermKind
 {
@@ -94,10 +88,14 @@ object EmptyTermKind extends EmptyTermKind
     new FastRefOption(EmptyTerm)
 
   override def cast(x:MultiTerm ): EmptyTerm.type = EmptyTerm
+
 }
 
 trait ContradictionTermKind extends MultiTermKind
 {
+  type In = MultiTerm
+  type Out = ContradictionTerm
+
   def contradiction(x:MultiTerm): ContradictionTerm
 }
 
@@ -106,6 +104,7 @@ trait StarTermKind extends MultiTermKind
   type In = MultiTerm
   type Out = StarTerm
 
-  @inline def star(x:MultiTerm): StarTerm = cast(x)
+  @inline final def star(x:MultiTerm): StarTerm = cast(x)
+
 
 }

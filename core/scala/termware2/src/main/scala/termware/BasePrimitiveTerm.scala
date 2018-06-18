@@ -18,38 +18,23 @@ trait PrimitiveTerm[T] extends PointTerm
 
   override def arity: Int = 0
 
-  override lazy val resolved: PrimitiveTerm[T] = this
-
-  /*
-  override def unifyResolved(term: MultiTerm): MultiTerm = {
-    term.kind match {
-      case x: EmptyTermKind => EmptyTerm
-      case x: ContradictionTermKind => x.contradiction(term)
-      case x: StarTermKind =>
-        val checker = x.star(term).context.resolve(KernelNames.checkName)
-        checker.kind match {
-          case c: EmptyTermKind => this
-          case other =>
-            KernelLanguage.evalCondition(checker.apply(this)) match {
-              case r: PointTermKind =>
-                val point = r.pointTerm(term)
-                point.kind match {
-                  case prk: PrimitiveTermKind =>
-                    val primitive = prk.primitive(point)
-                    if (primitive.primitiveTypeIndex == BooleanTermOps.primitiveTypeIndex) {
-                      val r = primitive.value.asInstanceOf[Boolean]
-                      if (r) this else EmptyTerm
-                    } else EmptyTerm
-                }
-            }
-        }
-      case x: PointTermKind =>
-        pointUnifyResolved(x.pointTerm(this))
-    }
+  override def subst(context: MultiTerm): MultiTerm = {
+     context.apply(this)
   }
 
-  def pointUnifyResolved(term:PointTerm): MultiTerm
-  */
+  override def pointUnify(term: PointTerm): MultiTerm = {
+    term.kind match {
+      case k: PrimitiveTermKind =>
+        val pt = k.cast(term)
+        if (pt.primitiveTypeIndex == primitiveTypeIndex &&
+          value == pt.value.asInstanceOf[T]
+        ) {
+          this
+        } else {
+          EmptyTerm
+        }
+    }
+  }
 
 }
 
@@ -63,7 +48,10 @@ trait BasePrimitiveTerm[T] extends PrimitiveTerm[T] with PrimitiveName[T]
 
   override def termConstructor(x:T): BasePrimitiveTerm[T]
 
-  override def context: MultiTerm = EmptyTerm
+  override lazy val resolved: PrimitiveTerm[T] = this
+
+  override def context():MultiTerm = EmptyTerm
+
 
 }
 

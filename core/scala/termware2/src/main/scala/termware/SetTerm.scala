@@ -20,7 +20,7 @@ trait SetTerm extends MultiTerm {
   def select(pattern: MultiTerm): MultiTerm
 
   /**
-    * select left parts, which comply pattern
+    * select left parts, which comply pattern, retun unification of left parts and
     */
   def selectLeft(pattern:MultiTerm): MultiTerm
 
