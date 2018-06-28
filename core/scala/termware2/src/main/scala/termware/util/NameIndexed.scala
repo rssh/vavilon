@@ -2,58 +2,62 @@ package termware.util
 
 import scala.language.higherKinds
 import cats.{Applicative, CommutativeApplicative, Eval, Traverse, UnorderedTraverse}
-import termware.Name
+import termware.util.NameIndexed.Record
+import termware.{AtomName, AtomTerm, Name}
 
 /**
   * Set of names and values (i.e. named record)
   * where fields have names and order.
   * (i.e. { x[index=0](0), y[index=1](0) } mean record with two fields,
   *  first is 'x', second is 'y', Point(1,2), Point(x=1,y=2), Point(y=2,x=1) mean the same)
+  *
+  * AtomContext can contains check and default values.
   */
-case class NameIndexed[+T](nameIndexes:Map[Name,Int] = Map(),values: IndexedSeq[T] = IndexedSeq())
+case class NameIndexed[+T](nameIndexes:Map[AtomName,Int] = Map(),
+                           records: IndexedSeq[NameIndexed.Record[T]] = IndexedSeq())
 {
 
-  def :+[S >:T](p: Tuple2[Name,S]):NameIndexed[S] =
-    NameIndexed(nameIndexes.updated(p._1,values.size), values :+ p._2)
+  def :+[S >:T](p: (AtomName,S)):NameIndexed[S] =
+    NameIndexed[S](nameIndexes.updated(p._1,records.size), records :+ Record(p._1,p._2))
 
-  def updated[S >: T](n:Name,v:S):NameIndexed[S] =
+  def updated[S >: T](n:AtomName,v:S):NameIndexed[S] =
      this :+ (n,v)
 
-  def size = values.size
+  def size = records.size
 
-  def get(n:Name):Option[T] = nameIndexes.get(n) map values
+  def get(n:AtomName):Option[T] = (nameIndexes.get(n) map records) map (_.value)
 
-  def get(i:Int):Option[T] = if (i>=0 && i < values.size) Some(values(i)) else None
+  def get(i:Int):Option[T] = if (i>=0 && i < records.size) Some(records(i).value) else None
 
   lazy val names = nameIndexes.toIndexedSeq.sortBy(_._2).map(_._1)
 
   def  map[S](f:T=>S):NameIndexed[S] = {
-    NameIndexed(nameIndexes,values.map(f))
+    NameIndexed(nameIndexes,records.map(_ map f))
   }
 
   def  exists(p: T=>Boolean): Boolean = {
-    values.exists(p)
+    records.exists(r => p(r.value))
   }
 
-  def foldLeft[S](s0:S)(f:(S,(Name,T))=>S):S =
+  def foldLeft[S](s0:S)(f:(S,(AtomName,T))=>S):S =
   {
     nameIndexes.foldLeft(s0){ case (s,(n,i)) =>
-      f(s,(n,values(i)))
+      f(s,(n,records(i).value))
     }
   }
 
-  def foldRight[S](s0:S)(f:((Name,T),S)=>S):S =
+  def foldRight[S](s0:S)(f:((AtomName,T),S)=>S):S =
   {
     nameIndexes.foldRight(s0){ case ((n,i),s) =>
-      f((n,values(i)),s)
+      f((n,records(i).value),s)
     }
   }
 
-  def foldWhile[S](s0:S)(p: S => Boolean)(f: (S,(Name,T))=>S): S =
+  def foldWhile[S](s0:S)(p: S => Boolean)(f: (S,(AtomName,T))=>S): S =
   {
     var s = s0
     nameIndexes.find { case (n,i) =>
-      s=f(s,(n,values(i)))
+      s=f(s,(n,records(i).value))
       ! p(s)
     }
     s
@@ -65,17 +69,22 @@ case class NameIndexed[+T](nameIndexes:Map[Name,Int] = Map(),values: IndexedSeq[
 
 object NameIndexed
 {
+
+  case class Record[+T](term:AtomTerm,value:T) {
+    def map[S](f:T=>S):Record[S] = Record(term,f(value))
+  }
+
   def empty[V] = NameIndexed[V](Map(),IndexedSeq())
 
-  def fromSeq[V](x:Seq[(Name,V)]): NameIndexed[V] = {
+  def fromSeq[V](x:Seq[(AtomName,V)]): NameIndexed[V] = {
     x.foldLeft(empty[V]){ _ :+ _ }
   }
 
-  def fromMap[V](x:Map[Name,V]):NameIndexed[V] = {
+  def fromMap[V](x:Map[AtomName,V]):NameIndexed[V] = {
     x.foldLeft(empty[V]){ _ :+ _ }
   }
 
-  def pair[V](n:Name,v:V): NameIndexed[V] = empty[V] :+ (n,v)
+  def pair[V](n:AtomName,v:V): NameIndexed[V] = empty[V] :+ (n,v)
 
 
   implicit object NITraverse extends Traverse[NameIndexed] {

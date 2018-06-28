@@ -69,6 +69,8 @@ trait MultiTerm
 
   def isContradiction(): Boolean = (kind == ContradictionTermKind)
 
+  def isExists(): Boolean = !( isEmpty() || isContradiction())
+
   def ifExists(t:MultiTerm): MultiTerm  =
     if (t.isEmpty() || t.isContradiction()) {
       t
