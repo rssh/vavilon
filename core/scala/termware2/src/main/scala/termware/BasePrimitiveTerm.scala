@@ -33,6 +33,7 @@ trait PrimitiveTerm[T] extends PointTerm
         } else {
           EmptyTerm
         }
+      case _ => EmptyTerm
     }
   }
 
@@ -151,6 +152,12 @@ case class LongTermBase(v:Long) extends BasePrimitiveTermImpl[LongTermBase,Long]
   def ops = LongTermOps
 }
 
+object IntTerm extends (Int => BasePrimitiveTerm[Int])
+{
+  @inline
+  override def apply(v: Int): BasePrimitiveTerm[Int] = IntTermBase(v)
+}
+
 
 object LongTermOps extends PrimitiveTermOps[LongTermBase,Long]
 {
@@ -159,6 +166,12 @@ object LongTermOps extends PrimitiveTermOps[LongTermBase,Long]
   override def ordering: Ordering[Long] = implicitly[Ordering[Long]]
 
   override def termConstructor(x: Long): LongTermBase = LongTermBase(x)
+}
+
+object LongTerm extends (Long => BasePrimitiveTerm[Long])
+{
+  @inline
+  override def apply(v: Long): BasePrimitiveTerm[Long] = LongTermBase(v)
 }
 
 case class DoubleTermBase(v:Double) extends BasePrimitiveTermImpl[DoubleTermBase,Double](v)
@@ -176,6 +189,13 @@ object DoubleTermOps extends PrimitiveTermOps[DoubleTermBase,Double]
   override def termConstructor(x: Double): DoubleTermBase = DoubleTermBase(x)
 }
 
+object DoubleTerm extends (Double => BasePrimitiveTerm[Double])
+{
+  @inline
+  override def apply(v: Double): BasePrimitiveTerm[Double] = DoubleTermBase(v)
+}
+
+
 case class BigDecimalTermBase(v:BigDecimal) extends BasePrimitiveTermImpl[BigDecimalTermBase,BigDecimal](v)
 {
   def ops = BigDecimalTermOps
@@ -189,6 +209,13 @@ object BigDecimalTermOps extends PrimitiveTermOps[BigDecimalTermBase,BigDecimal]
 
   override def termConstructor(x: BigDecimal) = BigDecimalTermBase(x)
 }
+
+object BigDecimalTerm extends (BigDecimal => PrimitiveTerm[BigDecimal])
+{
+  @inline
+  override def apply(v: BigDecimal): BasePrimitiveTerm[BigDecimal] = BigDecimalTermBase(v)
+}
+
 
 //TODO: add unsigned types
 
@@ -208,6 +235,12 @@ object CharTermOps extends PrimitiveTermOps[CharTermBase,Char]
   override def termConstructor(x: Char): CharTermBase = CharTermBase(x)
 }
 
+object CharTerm extends (Char => PrimitiveTerm[Char])
+{
+  @inline
+  override def apply(v: Char): BasePrimitiveTerm[Char] = CharTermBase(v)
+}
+
 
 case class StringTermBase(v:String) extends BasePrimitiveTermImpl[StringTermBase,String](v)
 {
@@ -224,10 +257,17 @@ object StringTermOps extends PrimitiveTermOps[StringTermBase,String]
   override def termConstructor(x: String) = StringTermBase(x)
 }
 
+object StringTerm extends (String => BasePrimitiveTerm[String])
+{
+  override def apply(v: String): BasePrimitiveTerm[String] = StringTermBase(v)
+}
+
+
 case class OpaqueTermBase(v:Array[Byte]) extends BasePrimitiveTermImpl[OpaqueTermBase,Array[Byte]](v)
 {
   def ops = OpaqueTermOps
 }
+
 
 object OpaqueTermOps extends PrimitiveTermOps[OpaqueTermBase,Array[Byte]]
 {
@@ -252,6 +292,12 @@ object OpaqueTermOps extends PrimitiveTermOps[OpaqueTermBase,Array[Byte]]
   override def termConstructor(x: Array[Byte]) = OpaqueTermBase(x)
 }
 
+object OpaqueTerm extends (Array[Byte] => PrimitiveTerm[Array[Byte]])
+{
+  override def apply(v: Array[Byte]): BasePrimitiveTerm[Array[Byte]] = OpaqueTermBase(v)
+}
+
+
 case class BooleanTermBase(v:Boolean) extends BasePrimitiveTermImpl[BooleanTermBase,Boolean](v)
 {
   def ops = BooleanTermOps
@@ -267,6 +313,11 @@ object BooleanTermOps extends PrimitiveTermOps[BooleanTermBase,Boolean]
   override def termConstructor(x: Boolean): BasePrimitiveTerm[Boolean] = BooleanTermBase(x)
 }
 
+object BooleanTerm extends (Boolean => PrimitiveTerm[Boolean])
+{
+  @inline
+  override def apply(v: Boolean): PrimitiveTerm[Boolean] = BooleanTermBase(v)
+}
 
 final case class ContextPrimitiveTerm[T](base: BasePrimitiveTerm[T], override val context: MultiTerm) extends PrimitiveTerm[T]
 {

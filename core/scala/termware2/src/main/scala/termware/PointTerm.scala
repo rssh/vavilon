@@ -17,6 +17,7 @@ trait PointTerm extends MultiTerm {
       case x: PointTermKind => apply(x.pointTerm(term))
       case x: EmptyTermKind => EmptyTerm
       case x: StarTermKind => EmptyTerm
+      case x: ContradictionTermKind => term
     }
 
   override def apply(term: PointTerm): MultiTerm = EmptyTerm

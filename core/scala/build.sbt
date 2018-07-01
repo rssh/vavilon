@@ -10,6 +10,7 @@ lazy val commonSettings = Seq(
     "org.typelevel" %% "cats-effect" % "1.0.0-RC",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
     "ch.qos.logback" % "logback-classic" % "1.1.7",
+    "com.lihaoyi" %% "fastparse" % "1.0.0",
     "org.scalatest" %% "scalatest" % "3.0.1" % Test
   )
 )
