@@ -1,43 +1,54 @@
 package termware
 
 import fastparse.all._
+import termware.util.FastParseLocAttributed._
 
 object TermwareParser {
 
-  val snumber:P[String] = P( CharIn('0' to '9')).rep(1).!
 
-  val longNumber = snumber.map(_.toLong)
+  val snumber:P[InSource[String]] = laCharsWhile(_.isDigit)
 
-  val floatingPoint:P[Double] = (snumber ~ P(".") ~ snumber).!.map(_.toDouble)
+  val longNumber:P[InSource[Long]] = snumber.map(_.map(_.toLong))
 
-  val escapeChar = P("\\") ~ (P("\"").map(_ => '\\')|
-                               P("n").map(_ => '\n')
-    )
 
-  val insideString:P[String] = (CharsWhile(ch => ch != '"' && ch != '\\')|escapeChar).rep(0).!
+  val floatingPoint:P[InSource[Double]] = (snumber ~ laLiteral(".") ~ snumber).map{
+    case (n1,c,n2) => combine3[String,String,String,Double]( (x,y,z) => (x + y + z).toDouble )(n1,c,n2)
+  }
+
+  val escapeChar:P[InSource[String]] = (laLiteral("\\") ~ (
+                               laLiteral("\"").map(_.map( _ => '"'))
+                                 |
+                               laLiteral("n").map(_.map(_ => '\n'))
+    )).map(_._2.map(_.toString))
+
+  val insideString:P[InSource[String]] = (laCharsWhile(ch => ch != '"' && ch != '\\')|escapeChar).rep(1).map{
+    combineSeq(_.mkString(""))
+  }
 
 
   val string = P("\"") ~/ insideString ~/ P("\"")
 
 
-  val boolean = P("true").map(_ => true)|P("false").map(_ => false)
+  val boolean = laLiteral("true").map(_.map(_ => true))|laLiteral("false").map(_.map(_ => false))
 
-  val identifier: P[String] = CharPred(_.isLetter) ~ CharsWhile(_.isLetterOrDigit).!
+  val identifier: P[InSource[String]] = (laCharPred(_.isLetter) ~ laCharsWhile(_.isLetterOrDigit)).map{
+    case (x,y) => combine2[Char,String,String](_.toString + _ )(x,y)
+  }
 
   // terms.
 
-  val longTerm:P[PointTerm] = longNumber.map(LongTerm)
+  val longTerm:P[InSource[PointTerm]] = longNumber.map(_.map(LongTerm))
 
-  val floatingPointTerm:P[PointTerm] = floatingPoint.map(DoubleTerm)
+  val floatingPointTerm:P[InSource[PointTerm]] = floatingPoint.map(_.map(DoubleTerm))
 
-  val booleanTerm = boolean.map(BooleanTerm)
+  val booleanTerm = boolean.map(_.map(BooleanTerm))
 
-  val stringTerm = string.map(StringTerm)
+  val stringTerm = string.map(_.map(StringTerm))
 
-  val atomTerm = identifier.map(AtomTerm(_))
+  val atomTerm = identifier.map(_.map(AtomTerm(_)))
 
 
-  val primitiveTerm: P[PointTerm] = longTerm | floatingPointTerm| booleanTerm | stringTerm
+  val primitiveTerm: P[InSource[PointTerm]] = longTerm | floatingPointTerm| booleanTerm | stringTerm
 
 
 }

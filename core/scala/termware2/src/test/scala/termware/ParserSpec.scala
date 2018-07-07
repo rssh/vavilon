@@ -11,6 +11,7 @@ class ParserSpec extends FunSpec {
     assert(t.isInstanceOf[PrimitiveTerm[_]])
     val pt = t.asInstanceOf[PrimitiveTerm[Long]]
     assert(pt.value == 1223L)
+    val source = pt.resolve(AtomTerm("source"))
   }
 
 }
