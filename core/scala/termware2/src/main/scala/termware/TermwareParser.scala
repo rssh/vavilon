@@ -2,6 +2,7 @@ package termware
 
 import fastparse.all._
 import termware.util.FastParseLocAttributed._
+import termware.util.NameIndexed
 
 object TermwareParser {
 
@@ -47,8 +48,48 @@ object TermwareParser {
 
   val atomTerm = identifier.map(_.map(AtomTerm(_)))
 
-
   val primitiveTerm: P[InSource[PointTerm]] = longTerm | floatingPointTerm| booleanTerm | stringTerm
 
+  lazy val structuredTerm: P[InSource[StructuredTerm]] =
+    (atomTerm ~~ laLiteral("(") ~~ termArgsTail ).pmap{ case ((x,y),z) =>
+      val s0 = (NameIndexed[MultiTerm](),1)
+      val (subterms, n) = z.foldLeft(s0){ (s,e) =>
+        val (indexes,count) = s
+        val (name,value) = e
+        val nName = if (name == KernelNames.emptyName) {
+                       AtomTerm("p"+count)
+                    } else {
+          name
+        }
+        (indexes.updated(nName.name,value),count+1)
+      }
+      StructuredTerm.create(x,subterms)
+    }
+
+
+  lazy val termArgsTail: P[InSource[List[(AtomTerm,MultiTerm)]]] =(
+    laLiteral(")").pmap(_ => Nil)
+    |
+    (laLiteral(",") ~~ termArg ~~ termArgsTail ).pmap{case ((x,y),z) =>
+         y::z
+      }
+    )
+
+  lazy val termArg: P[InSource[(AtomName,MultiTerm)]] = (
+     atomTerm ~~ termArgAtomTail
+    |
+     multiTerm.pmap(t => (KernelNames.emptyName, t))
+    )
+
+
+  lazy val termArgAtomTail:P[InSource[MultiTerm]] =
+    ((laLiteral("=") ~~ multiTerm).pmap{case (x,y) => y}
+    |
+    (&(laLiteral(","))).map(_ => InSource(EmptyTerm,InSourceLocation.ZERO))
+   )
+
+  lazy val pointTerm: P[InSource[PointTerm]] = atomTerm | primitiveTerm | structuredTerm
+
+  lazy val multiTerm: P[InSource[MultiTerm]] = pointTerm
 
 }
