@@ -42,6 +42,8 @@ object KernelNames {
   val checkName = AtomName("check")
   //val checkNameTerm = checkName.toTerm.in(kernelContext)
 
+  val thisName = AtomName("this")
+
   val elementName = AtomName("element")
   //val elementNameTerm = elementName.toTerm.in(kernelContext)
 
@@ -50,5 +52,12 @@ object KernelNames {
 
   val lengthName = AtomName("length")
 
+  val failureName = AtomName("failure")
+
+  val applyName = AtomName("apply")
+
+  val andName = AtomName("and")
+
+  val orName = AtomName("or")
 
 }

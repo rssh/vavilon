@@ -4,7 +4,7 @@ import cats.effect.IO
 
 import scala.reflect.runtime.universe
 
-trait PrimitiveTerm[T] extends PointTerm
+trait PrimitiveTerm[T] extends PointTerm with ContextCarrierTerm
 {
   def value:T
 
@@ -22,18 +22,19 @@ trait PrimitiveTerm[T] extends PointTerm
      context.apply(this)
   }
 
-  override def pointUnify(term: PointTerm): MultiTerm = {
-    term.kind match {
+  override def pointUnify(ptk: PointTermKind, ct: InContext[PointTerm]): InContext[MultiTerm] = {
+    ct.term.kind match {
       case k: PrimitiveTermKind =>
-        val pt = k.cast(term)
+        val pt = k.cast(ct.term)
         if (pt.primitiveTypeIndex == primitiveTypeIndex &&
           value == pt.value.asInstanceOf[T]
         ) {
-          this
+          ct
         } else {
-          EmptyTerm
+          InContext(EmptyTerm,KernelLanguage.contextWithFailure(ct.context,"value mismatch"))
         }
-      case _ => EmptyTerm
+      case _ =>
+        InContext(EmptyTerm,KernelLanguage.contextWithFailure(ct.context,"value type mismatch"))
     }
   }
 

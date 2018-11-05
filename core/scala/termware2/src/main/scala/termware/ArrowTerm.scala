@@ -1,5 +1,7 @@
 package termware
 
+import termware.util.FastRefOption
+
 
 case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm
 {
@@ -9,31 +11,63 @@ case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm
 
   override def kind: PointTermKind = ArrowTerm
 
-  override def context(): MultiTerm = left.context()
-
   override def apply(term: PointTerm): MultiTerm = {
-    val unification = left.unify(term)
-    if (unification.isEmpty() || unification.isContradiction()) {
-      EmptyTerm
+    val u = left.unify(TermInContext(term,EmptyTerm))
+    if (u.term.isExists()) {
+      right.subst(u.context)
     } else {
-      right.subst(left.unify(term).context())
+      u.term
     }
   }
 
-  override def pointUnify(term: PointTerm): MultiTerm = {
-    term.kind match {
-      case x: ArrowTermKind => arrowUnify(x.cast(term))
-      case _ => EmptyTerm
+
+  override def pointUnify(plt: PointTermKind, x: PointTermInContext): TermInContext = {
+    plt match {
+      case k: ArrowTermKind => arrowUnify(k,x)
+      case _ => TermInContext.empty
     }
   }
 
-  def arrowUnify(other: ArrowTerm): MultiTerm = {
-    map2(_ <> other.left,
-      (right,nleft) => (right <> other.right).ifExists(nleft).subst(nleft.context)
-    )
+  def arrowUnify(k:ArrowTermKind, x: TermInContext): TermInContext = {
+    val ax = k.arrow(k.pointTerm(x.term))
+    val lu = left unify (ax.left ^^ x.context)
+    if (!lu.term.isExists()) {
+      lu
+    } else {
+      val ru = right unify (ax.right ^^ lu.context)
+      if (!ru.term.isExists()) {
+        ru
+      } else {
+        ArrowTerm(lu.term,ru.term) ^^ ru.context
+      }
+    }
   }
 
   override def subst(context: MultiTerm): MultiTerm = map(_.subst(context))
+
+  override def resolve(term: MultiTerm): MultiTerm = left.resolve(term)
+
+  override def pointAnd(ptk:PointTermKind, x:PointTerm):MultiTerm = {
+    x match {
+      case IsArrowTerm(ax) =>
+        val lu = (left <> (ax.left ^^ EmptyTerm ))
+        if (lu.term.isEmpty()) {
+          SetTerm.create(this,ax)
+        } else {
+          val ru = right.unify(ax.right ^^ lu.context)
+          if (ru.term.isEmpty()) {
+            ContradictionTerm.createWithContex(SetTerm.fromMap(Map(
+              AtomName("msg") -> StringTerm("unification mismatch"),
+              AtomName("x") -> ax.right,
+              AtomName("y") -> right
+            )))
+          } else {
+            ru.term
+          }
+        }
+      case _ => EmptyTerm
+    }
+  }
 
   def map(f:MultiTerm=>MultiTerm):MultiTerm=
     map2(f,(r,_)=>f(r))
@@ -61,6 +95,16 @@ case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm
 object ArrowTerm extends ArrowTermKind {
   override def arrow(x: PointTerm): ArrowTerm = x.asInstanceOf[ArrowTerm]
   override def cast(x: PointTerm): ArrowTerm = x.asInstanceOf[ArrowTerm]
+}
 
+object IsArrowTerm
+{
+
+  def unapply(arg: MultiTerm): FastRefOption[ArrowTerm] = {
+    arg.kind match {
+      case kt:ArrowTermKind => new FastRefOption[ArrowTerm](kt.arrow(kt.pointTerm(arg)))
+      case _ => FastRefOption.empty
+    }
+  }
 
 }

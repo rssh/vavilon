@@ -28,12 +28,14 @@ trait MultiTerm
   def resolve(term:MultiTerm): MultiTerm
 
   /**
-    * Apply term to this.  Form expression (this term) and then apply reduction rules.
+    * Apply term to this in current context.
+    * Form expression (this term) and then apply reduction rules.
     * By condition, return emtpy if term was not applicable to this.
     * @param term
     * @return
     */
   def apply(term:PointTerm): MultiTerm
+
 
   /**
     * Substitute term in context
@@ -42,28 +44,20 @@ trait MultiTerm
     */
   def subst(context:MultiTerm):MultiTerm
 
-
   /**
     * Unify
-    * @param term
     * @return
     */
-  def unify(term:MultiTerm):MultiTerm
+  def unify(arg: TermInContext): TermInContext
 
   @inline
-  final def <> (term:MultiTerm): MultiTerm = unify(term)
+  final def <> (arg: TermInContext): TermInContext = {
+    this unify arg
+  }
 
-  /**
-    * @return context of this term (empty term, if context is not set)
-    */
-  def context(): MultiTerm
-
-  /**
-    * Merge context of this term with otherContext.
-    * Note, that context should be compatible with existing.
-    * @return term in new context
-    */
-  def contextMerge(otherContext:MultiTerm): MultiTerm
+  @inline
+  final def ^^ (context:MultiTerm): TermInContext =
+    TermInContext(this,context)
 
   def isEmpty(): Boolean = (kind == EmptyTermKind)
 
@@ -75,6 +69,17 @@ trait MultiTerm
     if (t.isEmpty() || t.isContradiction()) {
       t
     } else this
+
+  def or(x:MultiTerm): MultiTerm
+
+  def and(x:MultiTerm): MultiTerm = {
+    val u = unify(TermInContext(x,EmptyTerm))
+    u.term.subst(u.context)
+  }
+
+
+
+  def compatibleOr(x:MultiTerm): MultiTerm
 
 }
 

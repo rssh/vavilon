@@ -13,8 +13,9 @@ sealed trait MultiTermKind
 
 }
 
+sealed trait NonContradictionTermKind extends MultiTermKind
 
-sealed trait PointTermKind extends MultiTermKind
+sealed trait PointTermKind extends NonContradictionTermKind
 {
   type In <: MultiTerm
   type Out <: PointTerm
@@ -76,7 +77,14 @@ trait StructuredTermKind extends PointTermKind
 
 }
 
-trait EmptyTermKind extends MultiTermKind
+object StructuredTermKind extends StructuredTermKind
+{
+
+
+}
+
+
+trait EmptyTermKind extends NonContradictionTermKind
 {
   type In = MultiTerm
   type Out = EmptyTerm.type
@@ -87,7 +95,7 @@ object EmptyTermKind extends EmptyTermKind
   def unapply(arg: MultiTerm): FastRefOption[EmptyTerm.type] =
     new FastRefOption(EmptyTerm)
 
-  override def cast(x:MultiTerm ): EmptyTerm.type = EmptyTerm
+  override def cast(x:MultiTerm): EmptyTerm.type = EmptyTerm
 
 }
 
@@ -99,7 +107,7 @@ trait ContradictionTermKind extends MultiTermKind
   def contradiction(x:MultiTerm): ContradictionTerm
 }
 
-trait StarTermKind extends MultiTermKind
+trait StarTermKind extends NonContradictionTermKind
 {
   type In = MultiTerm
   type Out = StarTerm
@@ -108,3 +116,30 @@ trait StarTermKind extends MultiTermKind
 
 
 }
+
+trait SetTermKind extends NonContradictionTermKind
+{
+  type In = MultiTerm
+  type Out = SetTerm
+
+  @inline final def set(x:MultiTerm): SetTerm = x.asInstanceOf[SetTerm]
+
+}
+
+trait OrElseTermKind extends NonContradictionTermKind
+{
+  type In = MultiTerm
+  type Out = OrElseTerm
+
+}
+
+trait IfTermKind extends NonContradictionTermKind
+{
+  type In = MultiTerm
+  type Out = IfTerm
+
+  @inline final def guarded(x:MultiTerm): IfTerm = x.asInstanceOf[IfTerm]
+
+}
+
+object IfTermKind extends IfTermKind

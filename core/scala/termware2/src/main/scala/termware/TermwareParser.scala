@@ -2,7 +2,7 @@ package termware
 
 import fastparse.all._
 import termware.util.FastParseLocAttributed._
-import termware.util.NameIndexed
+import termware.util.{FastParseLocAttributed, NameIndexed}
 
 object TermwareParser {
 
@@ -91,5 +91,8 @@ object TermwareParser {
   lazy val pointTerm: P[InSource[PointTerm]] = atomTerm | primitiveTerm | structuredTerm
 
   lazy val multiTerm: P[InSource[MultiTerm]] = pointTerm
+
+
+  lazy val expression = laStart ~ multiTerm
 
 }

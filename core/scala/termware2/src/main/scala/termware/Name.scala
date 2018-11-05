@@ -1,7 +1,7 @@
 package termware
 
 
-sealed trait Name extends Ordered[Name] with PointTerm
+sealed trait Name extends Ordered[Name] with PointTerm with ContextCarrierTerm
 {
 
   type Carrier
@@ -74,15 +74,17 @@ abstract class SingletonName(override val typeIndex: Int) extends Name with Sing
 
   override final def singletonName: SingletonName = this
 
-  override final def pointUnify(term: PointTerm): MultiTerm = {
-    term.kind match {
+  override final def pointUnify(pk: PointTermKind, ct: InContext[PointTerm]): InContext[MultiTerm] = {
+    ct.term.kind match {
       case x: SingletonNameKind =>
-          if (x.cast(term).typeIndex == typeIndex) {
-            this
+          if (x.cast(ct.term).typeIndex == typeIndex) {
+            ct
           } else {
-            EmptyTerm
+            InContext(EmptyTerm,
+               KernelLanguage.contextWithFailure(ct.context,"singleton index mismatch"))
           }
-      case _ => EmptyTerm
+      case _ => InContext(EmptyTerm,
+        KernelLanguage.contextWithFailure(ct.context,"name mismatch"))
     }
   }
 

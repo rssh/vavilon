@@ -1,9 +1,11 @@
 package termware
 
+import termware.util.FastRefOption
+
 /**
   * contradiction (i.e. $\bot$ term
   */
-class ContradictionTerm(override val context: MultiTerm) extends MultiTerm
+class ContradictionTerm(context: MultiTerm) extends MultiTerm
 {
 
   override def kind: MultiTermKind = ContradictionTerm
@@ -14,25 +16,43 @@ class ContradictionTerm(override val context: MultiTerm) extends MultiTerm
 
   override def resolved(): MultiTerm = this
 
-  override def unify(term: MultiTerm): MultiTerm = this
-
-  override def contextMerge(otherContext: MultiTerm): MultiTerm = {
-    if (otherContext.isContradiction()) {
-      // TODO:  summarize all error messages ?
-      otherContext
-    } else {
-      this
-    }
-  }
+  override def unify(x: TermInContext): TermInContext =
+    this ^^ context
 
   override def subst(context: MultiTerm): MultiTerm = this
+
+  override def and(x: MultiTerm): MultiTerm = this
+
+  override def or(x:MultiTerm):MultiTerm = this
+
+  override def compatibleOr(x: MultiTerm): MultiTerm = this
 
 }
 
 
 object ContradictionTerm extends ContradictionTermKind
 {
+
+  def createWithContex(context: MultiTerm = EmptyTerm): ContradictionTerm = {
+    new ContradictionTerm(context)
+  }
+
   override def contradiction(x: MultiTerm): ContradictionTerm = {
     x.asInstanceOf[ContradictionTerm]
   }
+
+}
+
+object IsContradictionTerm
+{
+
+  def unapply(x:MultiTerm): FastRefOption[ContradictionTerm] = {
+    x.kind match {
+      case xk:ContradictionTermKind =>
+        new FastRefOption(xk.cast(x))
+      case _ =>
+        FastRefOption(null)
+    }
+  }
+
 }

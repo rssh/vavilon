@@ -3,7 +3,7 @@ package termware
 import termware.algo.ContextMerge
 import termware.util.FastRefOption
 
-trait AtomTerm extends PointTerm
+trait AtomTerm extends PointTerm with ContextCarrierTerm
 {
 
   override def name: AtomName
@@ -12,15 +12,15 @@ trait AtomTerm extends PointTerm
 
   def context(): MultiTerm
 
-  override def pointUnify(term: PointTerm): MultiTerm = {
-    term.kind match {
+  override def pointUnify(ptk: PointTermKind, u: InContext[PointTerm]): TermInContext = {
+    u.term.kind match {
       case kind: AtomTermKind =>
-        if (term.name == name) {
-          contextMerge(term.context())
+        if (u.term.name == name) {
+          u
         } else {
-          EmptyTerm
+          TermInContext.empty
         }
-      case _ => EmptyTerm
+      case _ => TermInContext.empty
     }
   }
 
@@ -28,10 +28,6 @@ trait AtomTerm extends PointTerm
     val to = context.resolve(this)
     if (to.isEmpty()) this else to
   }
-
-  override def contextMerge(otherContext:MultiTerm):MultiTerm =
-    (this unify otherContext)
-
 
 
 }

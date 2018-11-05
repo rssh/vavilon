@@ -1,8 +1,8 @@
 package termware
 
-import termware.util.NameIndexed
+import termware.util.{FastRefOption, NameIndexed}
 
-trait StructuredTerm extends PointTerm {
+trait StructuredTerm extends PointTerm  with ContextCarrierTerm {
 
   type Self <: StructuredTerm
 
@@ -12,8 +12,6 @@ trait StructuredTerm extends PointTerm {
 
 
   def get(name: AtomName): Option[MultiTerm]
-
-
 
   /**
     * @param i : 0 < i < arity
@@ -39,46 +37,54 @@ trait StructuredTerm extends PointTerm {
 
   override def context(): MultiTerm = nameTerm.context()
 
-  override def pointUnify(term: PointTerm): MultiTerm = {
+  override def pointUnify(ptk: PointTermKind, p: PointTermInContext): TermInContext = {
+    val term = p.term
     term.kind match {
       case k:StructuredTermKind =>
-        structuredUnify(k.cast(term))
-      case _ => EmptyTerm
+        structuredUnify(k,InContext(k.cast(term),p.context))
+      case _ => TermInContext(EmptyTerm,p.context)
     }
   }
 
-  def structuredUnify(term: StructuredTerm): MultiTerm = {
-    if (arity == term.arity) {
-      val unifiedName = nameTerm.unify(term.nameTerm)
+  def structuredUnify(ptk: PointTermKind, u: InContext[StructuredTerm]): TermInContext = {
+    val otherTerm = u.term
+    if (arity == otherTerm.arity) {
+      val InContext(unifiedName,nContext) = nameTerm.unify(InContext(otherTerm.nameTerm,u.context))
       if (unifiedName.isExists()) {
         unifiedName.kind match {
           case x:AtomTermKind =>
             val newName = x.cast(x.pointTerm(unifiedName))
             val newSubterms = NameIndexed.empty[MultiTerm]
-            val s0:MultiTerm = StructuredTerm.create(newName,newSubterms)
-            namedSubterms().foldWhile(s0)(_.isExists()){ case (s,(n,v)) =>
-              term.get(n) match {
+            val s0:InContext[MultiTerm] = InContext(
+                             StructuredTerm.create(newName,newSubterms),
+                             nContext)
+            namedSubterms().foldWhile(s0)(_.term.isExists()){ case (s,(n,v)) =>
+              otherTerm.get(n) match {
                 case None => s
                 case Some(otherValue) =>
-                  val u = v.contextMerge(s).unify(otherValue)
-                  s.kind match {
-                    case k:StructuredTermKind =>
-                      k.structured(k.pointTerm(s)).updated(n,u)
-                    case other => s
+                  s.term match {
+                    case IsStructuredTerm(ss) =>
+                      val InContext(nextValue,nextContext) = v.unify(TermInContext(otherValue,nContext))
+                      TermInContext(ss.updated(n,nextValue),nextContext)
+                    case _ => s
                   }
               }
             }
-          case other => EmptyTerm
+          case otherKind =>
+            //TODO: add error to context.
+            TermInContext(EmptyTerm,nContext)
         }
       } else {
-        EmptyTerm
+         TermInContext(EmptyTerm,KernelLanguage.contextWithFailure(u.context,"name mismatch"))
       }
     } else {
-      EmptyTerm
+      TermInContext(EmptyTerm,KernelLanguage.contextWithFailure(u.context,"arity mismatch"))
     }
   }
 
   def updated(name:AtomName, value: MultiTerm): MultiTerm
+
+
 
 }
 
@@ -90,9 +96,10 @@ object StructuredTerm extends StructuredTermKind
   def create(nameTerm: AtomTerm, indexes: NameIndexed[MultiTerm]): StructuredTerm =
     PlainStructuredTerm(nameTerm,indexes)
 
+
 }
 
-case class PlainStructuredTerm(override val nameTerm: AtomTerm,
+  case class PlainStructuredTerm(override val nameTerm: AtomTerm,
                                indexes:NameIndexed[MultiTerm]) extends StructuredTerm
 {
   override type Self = PlainStructuredTerm
@@ -128,5 +135,19 @@ case class PlainStructuredTerm(override val nameTerm: AtomTerm,
     PlainStructuredTerm(nameTerm,indexes.map(f))
   }
 
+
 }
 
+object IsStructuredTerm {
+
+  def unapply(x:MultiTerm):FastRefOption[StructuredTerm]={
+    x.kind match {
+      case sk: StructuredTermKind =>
+        new FastRefOption(sk.structured(sk.pointTerm(x)))
+      case _ =>
+        FastRefOption.empty
+    }
+  }
+
+
+}
