@@ -23,14 +23,7 @@ trait PointTerm extends MultiTerm {
                  this ^^ x.context
                } else {
                  val condition = KernelLanguage.evalCheck(checkExpression,x.term, thisContext compatibleOr x.context )
-                 condition.term match {
-
-                 }
-                 if (condition) {
-                   this ^^ x.context
-                 } else {
-                   EmptyTerm ^^ EmptyTerm
-                 }
+                 ???
                }
       case k: ContradictionTermKind => x
       case k: PointTermKind => pointUnify(k,x.asInstanceOf[InContext[PointTerm]])
@@ -56,10 +49,19 @@ trait PointTerm extends MultiTerm {
       case k: StarTermKind => val sx = k.star(x)
         val check = sx.resolve(KernelNames.checkName)
         if (check.isExists()) {
-          if (KernelLanguage.evalCondition(TermInContext(this,EmptyTerm))) {
-            this
-          } else {
-            EmptyTerm
+          // will be changed to  If (this.check() , ...
+          val checkResult = KernelLanguage.evalCheck(check,this,ArrowTerm(KernelNames.thisName,this))
+          checkResult.term match {
+            case BooleanTerm(value) =>
+              if (value) {
+                this
+              } else {
+                EmptyTerm
+              }
+            case other =>
+              // TODO: will be changed
+              // in theory we should add check here.
+              this
           }
         } else {
           this
@@ -97,7 +99,7 @@ trait PointTerm extends MultiTerm {
      this and x  // will be overrided in Arrow,
   }
 
-  def generateCheckExpression(): MultiTerm
+  def generateCheckExpression(): MultiTerm = ???
 
   lazy val thisContext = ArrowTerm(KernelNames.thisName,this)
 

@@ -23,3 +23,42 @@ object FastRefOption
   val empty: FastRefOption[Null] = new FastRefOption(null)
 
 }
+
+sealed trait FastRefBooleanOption
+{
+
+  def isEmpty: Boolean
+
+  def get(): Boolean
+
+
+}
+
+object FastRefBooleanOption
+{
+
+  case object Empty extends FastRefBooleanOption
+  {
+    override def isEmpty: Boolean = true
+
+    override def get(): Boolean = throw new NoSuchElementException()
+  }
+
+  case object True extends FastRefBooleanOption
+  {
+    override def isEmpty: Boolean = false
+    override def get(): Boolean = true
+  }
+
+  case object False extends FastRefBooleanOption
+  {
+    override def isEmpty: Boolean = false
+    override def get(): Boolean = false
+  }
+
+  def fromBoolean(value: Boolean): FastRefBooleanOption = {
+    if (value) True else False
+  }
+
+
+}

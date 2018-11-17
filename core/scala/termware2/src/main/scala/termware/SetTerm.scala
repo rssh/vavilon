@@ -19,7 +19,6 @@ trait SetTerm extends MultiTerm {
   def apply(term: PointTerm): MultiTerm =
     applyOne(term)
 
-
   /**
     * select part which comply pattern
     */
@@ -27,7 +26,7 @@ trait SetTerm extends MultiTerm {
 
   def selectAll(pattern: TermInContext): Seq[TermInContext]
 
-  def mapReduce[A](map: PointTerm => A)(reduce:(A, A) => A)(zero: =>A):A
+  def mapReduce[A](map: MultiTerm => A)(reduce:(A, A) => A)(zero: =>A):A
 
   def members(): Seq[PointTerm]
 
@@ -49,7 +48,12 @@ object SetTerm
 {
 
   // Default constructor
-  def create(subterms: PointTerm*):MultiTerm =
+  def create(subterms: MultiTerm*):MultiTerm = {
+     val r: MultiTerm = EmptyTerm
+     subterms.foldLeft(r)(_ or _)
+  }
+
+  def createPoints(subterms:PointTerm*): MultiTerm =
     new SeqSetTerm(subterms)
 
   def fromSeq(subterms: Seq[PointTerm]):MultiTerm =
@@ -143,7 +147,7 @@ class SeqSetTerm(inSeq: Seq[PointTerm]) extends SetTerm
 
 
 
-  override def mapReduce[A](mapf: PointTerm => A)(reduce: (A, A) => A)(zero: =>A):A = {
+  override def mapReduce[A](mapf: MultiTerm => A)(reduce: (A, A) => A)(zero: =>A):A = {
     val s0 = zero
     seq.foldLeft(s0){ (s,e) =>
       reduce(s,mapf(e))
@@ -241,11 +245,22 @@ class SeqSetTerm(inSeq: Seq[PointTerm]) extends SetTerm
       case k:StarTermKind => val ctx = k.star(other).context
         val checkExpr = ctx.resolve(KernelNames.checkName)
         import KernelLanguage._
-        val checkWithArg = Apply(checkExpr,this)
-        if (evalCondition(checkWithArg^^EmptyTerm)) {
-          other
-        } else {
-          EmptyTerm
+        val checkResult = KernelLanguage.evalCheck(checkExpr,this,ArrowTerm(KernelNames.thisName,this))
+        checkResult.term.kind match {
+          case k: PrimitiveTermKind =>
+            val pt = k.primitive(k.pointTerm(checkResult.term))
+            if (pt.primitiveTypeIndex == BooleanTermOps.primitiveTypeIndex) {
+              val b = pt.valueAs[Boolean]
+              if (b) {
+                other
+              } else {
+                EmptyTerm
+              }
+            } else {
+              EmptyTerm
+            }
+          case _ =>
+            mapReduce(_.compatibleOr(other))(_ or _)(EmptyTerm)
         }
       case k:ContradictionTermKind => other
       case k:SetTermKind => val otherSet = k.set(other)

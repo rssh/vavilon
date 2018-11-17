@@ -13,13 +13,24 @@ abstract class IfTerm(val value: MultiTerm, val condition:PointTerm) extends Mul
   override def kind: MultiTermKind = IfTermKind
 
 
-  /**
-    * Term, resolved in own context.
-    *
-    * @return
-    */
-  override def resolved(): MultiTerm =
-    IfTermKind(value.resolved(),condition)
+  override lazy val resolved: MultiTerm = {
+    val resolvedValue = value.resolved
+    val resolvedCondition = condition.resolved
+    resolvedCondition match {
+      case k:PointTermKind =>
+        // TODO: mixEval
+        val ct = k.pointTerm(condition)
+        lazy val r: IfTerm = new IfTerm(resolvedValue,ct) {
+          override lazy val resolved: IfTerm = r
+        }
+        r
+      case k:ContradictionTermKind =>
+        k.contradiction(resolvedCondition)
+      case x => // Impossible
+        // TODO: rethink or add data to context
+        this
+    }
+  }
 
   /**
     * resolve term in context of this
@@ -39,8 +50,15 @@ abstract class IfTerm(val value: MultiTerm, val condition:PointTerm) extends Mul
     */
   override def subst(context: MultiTerm): MultiTerm = {
     val resolved = value.subst(context)
+    val resolvedContext = condition.subst(context)
 
-    def thisContext = ArrowName(this )
+    ???
+    //def resolvedContext = ArrowTerm(AtomName("this"), resolved)
+    //PointIfTerm(resolved, resolvedContext)
+  }
+
+  override def apply(argument: PointTerm): MultiTerm = {
+    value.apply(argument)
   }
 
   /**
@@ -55,4 +73,3 @@ abstract class IfTerm(val value: MultiTerm, val condition:PointTerm) extends Mul
   override def compatibleOr(x: MultiTerm): MultiTerm = ???
 }
 
-class PointIfTerm(override val value: PointTerm, override val condition: PointTerm) extends IfTerm(value, )

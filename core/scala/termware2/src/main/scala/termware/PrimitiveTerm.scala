@@ -1,6 +1,7 @@
 package termware
 
 import cats.effect.IO
+import termware.util.{FastRefBooleanOption, FastRefOption}
 
 import scala.reflect.runtime.universe
 
@@ -14,7 +15,7 @@ trait PrimitiveTerm[T] extends PointTerm with ContextCarrierTerm
 
   def termConstructor(x:T): PrimitiveTerm[T]
 
-  def valueAs[S<:T]:S = value.asInstanceOf[S]
+  def valueAs[S]:S = value.asInstanceOf[S]
 
   override def arity: Int = 0
 
@@ -44,7 +45,7 @@ trait PrimitiveTerm[T] extends PointTerm with ContextCarrierTerm
 trait BasePrimitiveTerm[T] extends PrimitiveTerm[T] with PrimitiveName[T]
 {
 
-  override def kind: PrimitiveTermKind = BasePrimitiveTerm
+  override def kind: PrimitiveTermKind = PrimitiveTerm
 
   override def name: Name = this
 
@@ -59,7 +60,7 @@ trait BasePrimitiveTerm[T] extends PrimitiveTerm[T] with PrimitiveName[T]
 
 
 
-object BasePrimitiveTerm  extends PrimitiveTermKind
+object PrimitiveTerm  extends PrimitiveTermKind
 {
   override def primitive(x: PointTerm): BasePrimitiveTerm[_] = {
     x.asInstanceOf[BasePrimitiveTerm[_]]
@@ -215,7 +216,9 @@ object BigDecimalTerm extends (BigDecimal => PrimitiveTerm[BigDecimal])
 {
   @inline
   override def apply(v: BigDecimal): BasePrimitiveTerm[BigDecimal] = BigDecimalTermBase(v)
+
 }
+
 
 
 //TODO: add unsigned types
@@ -318,6 +321,21 @@ object BooleanTerm extends (Boolean => PrimitiveTerm[Boolean])
 {
   @inline
   override def apply(v: Boolean): PrimitiveTerm[Boolean] = BooleanTermBase(v)
+
+  def unapply(v: MultiTerm): FastRefBooleanOption = {
+     v.kind match {
+       case k: PrimitiveTermKind =>
+         val pv = k.primitive(k.pointTerm(v))
+         if (pv.primitiveTypeIndex == BooleanTermOps.primitiveTypeIndex) {
+           FastRefBooleanOption.fromBoolean(pv.valueAs[Boolean])
+         } else {
+           FastRefBooleanOption.Empty
+         }
+       case _ => FastRefBooleanOption.Empty
+     }
+  }
+
+
 }
 
 final case class ContextPrimitiveTerm[T](base: BasePrimitiveTerm[T], override val context: MultiTerm) extends PrimitiveTerm[T]

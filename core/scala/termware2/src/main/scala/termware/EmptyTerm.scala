@@ -34,7 +34,7 @@ final object EmptyTerm extends MultiTerm  with SetTerm
 
   override def selectAll(pattern: TermInContext): Seq[TermInContext] = Seq.empty
 
-  override def mapReduce[A](map: PointTerm => A)(reduce: (A, A) => A)(zero: =>A) = zero
+  override def mapReduce[A](map: MultiTerm => A)(reduce: (A, A) => A)(zero: =>A) = zero
 
   override def members(): Seq[PointTerm] = Seq.empty
 }

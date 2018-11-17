@@ -132,6 +132,7 @@ final object ContradictionName extends SingletonName(TypeIndexes.ERROR)
 final object OrElseName extends SingletonName(TypeIndexes.OR_ELSE)
 final object ArrowName extends SingletonName(TypeIndexes.ARROW)
 final object EmptyName extends SingletonName(TypeIndexes.ARROW)
+final object IfName extends SingletonName(TypeIndexes.IF)
 
 
 object TypeIndexes
@@ -146,6 +147,7 @@ object TypeIndexes
   final val UNIT = 202
   final val ARROW = 203
   final val OR_ELSE = 204
+  final val IF = 205
 
 
   final val STAR = 254

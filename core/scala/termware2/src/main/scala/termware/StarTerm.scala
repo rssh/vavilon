@@ -77,9 +77,28 @@ class PlainStarTerm(override val context: MultiTerm) extends StarTerm {
         } else {
            // TODO: try apply check, mb it's always true
            // val pointCheck = generateCheckExpression(k.pointTerm());
+           val checkResult = KernelLanguage.evalCheck(check,x,ArrowTerm(KernelNames.thisName,x))
+           checkResult.term.kind match {
+             case k: PrimitiveTermKind =>
+               val pt= k.primitive(k.pointTerm(checkResult.term))
+               if (pt.primitiveTypeIndex == BooleanTermOps.primitiveTypeIndex) {
+                 val b = pt.valueAs[Boolean]
+                 if (b) {
+                   this
+                 } else {
+                   // TODO: allow SetTerm include non-point terms.
+                   SetTerm.create(this,x)
+                 }
+               } else {
+                 // TODO: allow SetTerm include non-point terms.
+                 SetTerm.create(this,x)
+               }
+           }
         }
     }
   }
+
+  override def compatibleOr(x: MultiTerm): MultiTerm = and(x)
 
 }
 
