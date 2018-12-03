@@ -5,6 +5,7 @@ import termware.util.FastRefOption
 /**
   * contradiction (i.e. $\bot$ term
   */
+/*
 class ContradictionTerm(context: MultiTerm) extends MultiTerm
 {
 
@@ -16,16 +17,14 @@ class ContradictionTerm(context: MultiTerm) extends MultiTerm
 
   override def resolved(): MultiTerm = this
 
-  override def unify(x: TermInContext): TermInContext =
-    this ^^ context
+  override def unify(x: MultiTerm): MultiTerm =
+    this
 
   override def subst(context: MultiTerm): MultiTerm = this
 
   override def and(x: MultiTerm): MultiTerm = this
 
   override def or(x:MultiTerm):MultiTerm = this
-
-  override def compatibleOr(x: MultiTerm): MultiTerm = this
 
 }
 
@@ -56,3 +55,4 @@ object IsContradictionTerm
   }
 
 }
+*/

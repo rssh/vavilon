@@ -99,6 +99,7 @@ object EmptyTermKind extends EmptyTermKind
 
 }
 
+/*
 trait ContradictionTermKind extends MultiTermKind
 {
   type In = MultiTerm
@@ -106,6 +107,7 @@ trait ContradictionTermKind extends MultiTermKind
 
   def contradiction(x:MultiTerm): ContradictionTerm
 }
+*/
 
 trait StarTermKind extends NonContradictionTermKind
 {
@@ -117,19 +119,32 @@ trait StarTermKind extends NonContradictionTermKind
 
 }
 
-trait SetTermKind extends NonContradictionTermKind
+trait OrSetTermKind extends NonContradictionTermKind
 {
   type In = MultiTerm
-  type Out = SetTerm
+  type Out = OrSetTerm
 
-  @inline final def set(x:MultiTerm): SetTerm = x.asInstanceOf[SetTerm]
+  @inline final def orSet(x:MultiTerm): OrSetTerm = x.asInstanceOf[OrSetTerm]
 
 }
+
+trait AndSetTermKind extends NonContradictionTermKind
+{
+  type In = MultiTerm
+  type Out = AndSetTerm
+
+  @inline final def andSet(x:MultiTerm): AndSetTerm = x.asInstanceOf[AndSetTerm]
+
+}
+
+
 
 trait OrElseTermKind extends NonContradictionTermKind
 {
   type In = MultiTerm
   type Out = OrElseTerm
+
+  @inline final def orElse(x:MultiTerm): OrElseTerm = x.asInstanceOf[OrElseTerm]
 
 }
 

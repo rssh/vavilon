@@ -6,21 +6,24 @@ import termware.util.FastRefOption
 trait AtomTerm extends PointTerm with ContextCarrierTerm
 {
 
+  override def kind: PointTermKind = AtomTerm.Kind
+
   override def name: AtomName
 
   override def arity: Int = 0
 
   def context(): MultiTerm
 
-  override def pointUnify(ptk: PointTermKind, u: InContext[PointTerm]): TermInContext = {
-    u.term.kind match {
-      case kind: AtomTermKind =>
-        if (u.term.name == name) {
+  override def pointUnify(ptk: PointTermKind, u: PointTerm): MultiTerm = {
+    u.kind match {
+      case k:AtomTermKind =>
+        val otherAtom = k.atomTerm(u)
+        if (name == otherAtom.name) {
           u
         } else {
-          TermInContext.empty
+          EmptyTerm
         }
-      case _ => TermInContext.empty
+      case _ => EmptyTerm
     }
   }
 
@@ -32,16 +35,42 @@ trait AtomTerm extends PointTerm with ContextCarrierTerm
 
 }
 
-class ContextAtomTerm(override val name: AtomName, override val context:MultiTerm = EmptyTerm) extends AtomTerm {
 
-  override def kind = ContextAtomTerm
+case class ContextLessAtomTerm(override val name: AtomName) extends AtomTerm with NoExternalContext {
+
+  override def context(): MultiTerm = EmptyTerm
+
+  override def setExternalContext(context: MultiTerm): MultiTerm =
+    if (context.isStar()) {
+      this
+    } else {
+      ContextAtomTerm(name,EmptyTerm,context)
+    }
+
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    if (context.isEmpty()) {
+      this
+    } else {
+      ContextAtomTerm(name,context,StarTerm.U)
+    }
+  }
 
 }
 
-object ContextAtomTerm extends AtomTermKind
+
+case class ContextAtomTerm(override val name: AtomName,
+                           override val context:MultiTerm = EmptyTerm,
+                           externContext: MultiTerm = StarTerm.U
+                          ) extends TermInContexts(name,context,externContext) with AtomTerm {
+
+
+}
+
+
+object ContextAtomTerm
 {
 
-  def apply(name:AtomName, context:MultiTerm = EmptyTerm): AtomTerm = {
+  def apply(name:AtomName, context:MultiTerm): AtomTerm = {
     if (context.isEmpty()) {
       name
     } else {
@@ -49,14 +78,20 @@ object ContextAtomTerm extends AtomTermKind
     }
   }
 
-  override def atomTerm(x: PointTerm): AtomTerm = x.asInstanceOf[AtomTerm]
+
 }
 
 object AtomTerm
 {
+
+  object Kind extends AtomTermKind {
+    override def atomTerm(x: PointTerm): AtomTerm = x.asInstanceOf[ContextLessAtomTerm]
+  }
+
   def apply(sname:String) = AtomName(sname)
 
   def unapply(arg: AtomTerm): FastRefOption[AtomTerm] = {
      new FastRefOption(arg)
   }
 }
+

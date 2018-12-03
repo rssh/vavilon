@@ -3,7 +3,7 @@ package termware
 import termware.util.FastRefOption
 
 
-case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm
+case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm with NoExternalContext
 {
   override def name: Name = KernelNames.arrowName
 
@@ -12,34 +12,39 @@ case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm
   override def kind: PointTermKind = ArrowTerm
 
   override def apply(term: PointTerm): MultiTerm = {
-    val u = left.unify(TermInContext(term,EmptyTerm))
-    if (u.term.isExists()) {
-      right.subst(u.context)
+    val u = left.unify(term)
+    if (u.isExists()) {
+      right.subst(u.externalContext())
     } else {
-      u.term
+      u
     }
   }
 
 
-  override def pointUnify(plt: PointTermKind, x: PointTermInContext): TermInContext = {
+  override def pointUnify(plt: PointTermKind, u: PointTerm):MultiTerm = {
     plt match {
-      case k: ArrowTermKind => arrowUnify(k,x)
-      case _ => TermInContext.empty
+      case k: ArrowTermKind => arrowUnify(k,k.arrow(u))
+      case _ => EmptyTerm
     }
   }
 
-  def arrowUnify(k:ArrowTermKind, x: TermInContext): TermInContext = {
-    val ax = k.arrow(k.pointTerm(x.term))
-    val lu = left unify (ax.left ^^ x.context)
-    if (!lu.term.isExists()) {
-      lu
-    } else {
-      val ru = right unify (ax.right ^^ lu.context)
-      if (!ru.term.isExists()) {
-        ru
+  def arrowUnify(k:ArrowTermKind, x: ArrowTerm): MultiTerm = {
+    val lu = left unify x.left
+    if (!lu.isEmpty()) {
+      val ec = lu.externalContext()
+      val commonLeft = lu.dropExternalContext().subst(ec)
+      val rightThis = right.subst(ec)
+      val rightX = x.right.subst(ec)
+      val ru = rightThis unify rightX
+      if (ru.externalContext().isEmpty()) {
+        // then result of applying to left and right will be the same.
+        AndSetTerm.createPoints(this,x)
       } else {
-        ArrowTerm(lu.term,ru.term) ^^ ru.context
+        // TODO:  Log  (term with histroy)
+        EmptyTerm
       }
+    } else {
+      AndSetTerm.createPoints(this,x)
     }
   }
 
@@ -47,26 +52,8 @@ case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm
 
   override def resolve(term: MultiTerm): MultiTerm = left.resolve(term)
 
-  override def pointAnd(ptk:PointTermKind, x:PointTerm):MultiTerm = {
-    x match {
-      case IsArrowTerm(ax) =>
-        val lu = (left <> (ax.left ^^ EmptyTerm ))
-        if (lu.term.isEmpty()) {
-          SetTerm.create(this,ax)
-        } else {
-          val ru = right.unify(ax.right ^^ lu.context)
-          if (ru.term.isEmpty()) {
-            ContradictionTerm.createWithContex(SetTerm.fromMap(Map(
-              AtomName("msg") -> StringTerm("unification mismatch"),
-              AtomName("x") -> ax.right,
-              AtomName("y") -> right
-            )))
-          } else {
-            ru.term
-          }
-        }
-      case _ => EmptyTerm
-    }
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    ArrowTerm(left.pushInternalContext(context),right)
   }
 
   def map(f:MultiTerm=>MultiTerm):MultiTerm=

@@ -5,6 +5,7 @@ import cats.effect.IO
 trait MultiTerm
 {
 
+
   /**
     * Kind of term.
     * Used for marching by cases of kind, when we want form compiler exhausive case analysis)
@@ -13,12 +14,6 @@ trait MultiTerm
     */
   def kind:MultiTermKind
 
-
-  /**
-    * Term, resolved in own context.
-    * @return
-    */
-  def resolved(): MultiTerm
 
   /**
     * resolve term in context of this
@@ -48,38 +43,82 @@ trait MultiTerm
     * Unify
     * @return
     */
-  def unify(arg: TermInContext): TermInContext
+  def unify(arg: MultiTerm): MultiTerm
 
   @inline
-  final def <> (arg: TermInContext): TermInContext = {
+  final def <> (arg: MultiTerm): MultiTerm = {
     this unify arg
   }
 
-  @inline
-  final def ^^ (context:MultiTerm): TermInContext =
-    TermInContext(this,context)
 
   def isEmpty(): Boolean = (kind == EmptyTermKind)
 
-  def isContradiction(): Boolean = (kind == ContradictionTermKind)
-
-  def isExists(): Boolean = !( isEmpty() || isContradiction())
+  def isExists(): Boolean = !( isEmpty() )
 
   def ifExists(t:MultiTerm): MultiTerm  =
-    if (t.isEmpty() || t.isContradiction()) {
+    if (t.isEmpty() ) {
       t
     } else this
+
+  def isStar(): Boolean = kind.isInstanceOf[StarTermKind]
 
   def or(x:MultiTerm): MultiTerm
 
   def and(x:MultiTerm): MultiTerm = {
-    val u = unify(TermInContext(x,EmptyTerm))
-    u.term.subst(u.context)
+    val u = unify(x)
+    if (u.isEmpty()) {
+      EmptyTerm
+    } else {
+      val e = u.externalContext()
+      u.dropExternalContext().subst(e)
+    }
   }
 
+  def orElse(x: MultiTerm): MultiTerm = {
+    OrElseTerm(this,x)
+  }
+
+  def cond(x: PointTerm): MultiTerm = {
+    IfTerm(this,x)
+  }
+
+  def substExternalContext(): MultiTerm = {
+    subst(externalContext).dropExternalContext
+  }
+
+  def externalContext(): MultiTerm
+
+  def dropExternalContext(): MultiTerm
 
 
-  def compatibleOr(x:MultiTerm): MultiTerm
+  /**
+    * Set external context
+    * @param context
+    * @return
+    */
+  def setExternalContext(context: MultiTerm): MultiTerm
+
+  def addExternalContext(context: MultiTerm): MultiTerm = {
+    setExternalContext(externalContext() and context)
+  }
+
+  def pushInternalContext(context: MultiTerm): MultiTerm
+
+
+  /**
+    * Check, if other external context
+    * @param otherEC
+    * @param f: function, wich accept joined external context
+    * @return EmptyText, if externContext and otherEC invompatible, f(joinContext) otherwise
+    */
+  def ifExternalContext(otherEC: MultiTerm)(f: MultiTerm => MultiTerm): MultiTerm = {
+    val jointEc = externalContext() and otherEC
+    jointEc.kind match {
+      case k: EmptyTermKind => EmptyTerm
+      case _ => f(jointEc)
+    }
+  }
+
 
 }
 

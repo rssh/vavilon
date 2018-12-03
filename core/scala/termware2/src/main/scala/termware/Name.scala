@@ -22,8 +22,8 @@ sealed trait Name extends Ordered[Name] with PointTerm with ContextCarrierTerm
 
   override def arity = 0
 
-
 }
+
 
 abstract class StringLikeName(val value:String) extends Name
 {
@@ -62,7 +62,7 @@ trait PrimitiveName[T] extends Name
   * Singleton name, each name have unique type-index. (example: Universum)
   * @param typeIndex
   */
-abstract class SingletonName(override val typeIndex: Int) extends Name with SingletonNameKind
+abstract class SingletonName(override val typeIndex: Int) extends Name with SingletonNameKind with NoExternalContext
 {
   override final type Carrier = Unit
 
@@ -74,17 +74,17 @@ abstract class SingletonName(override val typeIndex: Int) extends Name with Sing
 
   override final def singletonName: SingletonName = this
 
-  override final def pointUnify(pk: PointTermKind, ct: InContext[PointTerm]): InContext[MultiTerm] = {
-    ct.term.kind match {
+  override final def pointUnify(pk: PointTermKind, term: PointTerm): MultiTerm = {
+    term.kind match {
       case x: SingletonNameKind =>
-          if (x.cast(ct.term).typeIndex == typeIndex) {
-            ct
+          if (x.cast(term).typeIndex == typeIndex) {
+            term
           } else {
-            InContext(EmptyTerm,
-               KernelLanguage.contextWithFailure(ct.context,"singleton index mismatch"))
+            EmptyTerm
+             //TODO: add context ?  KernelLanguage.contextWithFailure(ct.context,"singleton index mismatch"))
           }
-      case _ => InContext(EmptyTerm,
-        KernelLanguage.contextWithFailure(ct.context,"name mismatch"))
+      case _ => EmptyTerm
+        //  TODO: add mismatch context ?  KernelLanguage.contextWithFailure(ct.context,"name mismatch"))
     }
   }
 
@@ -93,18 +93,41 @@ abstract class SingletonName(override val typeIndex: Int) extends Name with Sing
 
   override def subst(context: MultiTerm): MultiTerm = {
     val r = context.resolve(this)
-    if (r.isEmpty() || r.isContradiction()) {
+    if (r.isEmpty()) {
       this
     } else {
       r
     }
   }
 
-
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    new ContextfullSingletonName(this,context,StarTerm.U)
+  }
 
 }
 
-final case class AtomName(s:String) extends StringLikeName(s) with AtomTerm
+class ContextfullSingletonName(term: SingletonName, internContext: MultiTerm, externContext:MultiTerm) extends TermInContexts(term,internContext,externContext) with Name with SingletonNameKind
+{
+  override type Carrier = Unit
+
+  override def typeIndex: Int = singletonName.typeIndex
+
+  override def compareSameTypeIndex(that: Name): Int = 0
+
+  override def carrier: Carrier = term.carrier
+
+  override def singletonName(): SingletonName = term
+
+  override def kind: PointTermKind = term.kind
+
+  override def pointUnify(ptk: PointTermKind, u: PointTerm): MultiTerm = {
+    term.pointUnify(ptk,u)
+  }
+
+  override def context(): MultiTerm = internContext
+}
+
+final case class AtomName(s:String) extends StringLikeName(s) with AtomTerm with NoExternalContext
 {
 
   override def kind = AtomName
@@ -115,6 +138,9 @@ final case class AtomName(s:String) extends StringLikeName(s) with AtomTerm
 
   def context(): MultiTerm = EmptyTerm
 
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    ContextAtomTerm(this,context,StarTerm.U)
+  }
 
 }
 

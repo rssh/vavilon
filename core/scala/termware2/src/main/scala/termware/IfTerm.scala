@@ -1,7 +1,12 @@
 package termware
 
+trait IfTerm extends MultiTerm
+{
 
-abstract class IfTerm(val value: MultiTerm, val condition:PointTerm) extends MultiTerm {
+  def value: MultiTerm
+
+  def condition: PointTerm
+
 
   /**
     * Kind of term.
@@ -13,24 +18,51 @@ abstract class IfTerm(val value: MultiTerm, val condition:PointTerm) extends Mul
   override def kind: MultiTermKind = IfTermKind
 
 
-  override lazy val resolved: MultiTerm = {
-    val resolvedValue = value.resolved
-    val resolvedCondition = condition.resolved
-    resolvedCondition match {
-      case k:PointTermKind =>
-        // TODO: mixEval
-        val ct = k.pointTerm(condition)
-        lazy val r: IfTerm = new IfTerm(resolvedValue,ct) {
-          override lazy val resolved: IfTerm = r
+  override def apply(argument: PointTerm): MultiTerm = {
+    val check = KernelLanguage.evalCheck(condition,value,EmptyTerm)
+    check match {
+      case BooleanTerm(v) =>
+        if (v) {
+          value.apply(argument)
+        } else {
+          EmptyTerm
         }
-        r
-      case k:ContradictionTermKind =>
-        k.contradiction(resolvedCondition)
-      case x => // Impossible
-        // TODO: rethink or add data to context
-        this
+      case other =>
+        // guard failed.
+        EmptyTerm
     }
   }
+
+  /**
+    * Unify
+    *
+    * @return
+    */
+  override def unify(x: MultiTerm): MultiTerm = {
+    ifExternalContext(x.externalContext()){ joinContext =>
+      val check = KernelLanguage.evalCheck(condition,value,joinContext)
+      check match {
+        case BooleanTerm(v) =>
+          if (v) {
+            value.setExternalContext(joinContext) unify x.dropExternalContext()
+          } else {
+            EmptyTerm
+          }
+        case _ =>
+          val nv = value.setExternalContext(joinContext) unify x.dropExternalContext()
+          IfTerm(nv, check)
+      }
+    }
+  }
+
+
+
+}
+
+
+case class PlainIfTerm(val value: MultiTerm, val condition:PointTerm) extends IfTerm with NoExternalContext {
+
+
 
   /**
     * resolve term in context of this
@@ -50,26 +82,69 @@ abstract class IfTerm(val value: MultiTerm, val condition:PointTerm) extends Mul
     */
   override def subst(context: MultiTerm): MultiTerm = {
     val resolved = value.subst(context)
-    val resolvedContext = condition.subst(context)
-
-    ???
-    //def resolvedContext = ArrowTerm(AtomName("this"), resolved)
-    //PointIfTerm(resolved, resolvedContext)
+    val check = KernelLanguage.evalCheck(condition,value,context)
+    check match {
+      case BooleanTerm(v) =>
+        if (v) resolved else EmptyTerm
+      case _ =>
+        IfTerm(value,check)
+    }
   }
 
-  override def apply(argument: PointTerm): MultiTerm = {
-    value.apply(argument)
+
+
+  override def or(x: MultiTerm): MultiTerm = {
+    x.kind match {
+      case k: EmptyTermKind => this
+      case k: StarTermKind => x
+      case k: OrSetTermKind => k.orSet(x) or this
+      case k: AndSetTermKind => OrSetTerm._fromSeq(Seq(this,x))
+      case k: OrElseTermKind => OrSetTerm._fromSeq(Seq(this,x))
+      case k: PointTermKind => OrSetTerm._fromSeq(Seq(this,x))
+      case k: IfTermKind => val gx = k.guarded(x)
+        if (gx.value == value) {
+          IfTerm(value,KernelLanguage.Or(condition,gx.condition))
+        } else {
+          OrSetTerm._fromSeq(Seq(this,x))
+        }
+    }
   }
 
-  /**
-    * Unify
-    *
-    * @return
-    */
-  override def unify(arg: TermInContext): TermInContext = ???
+  override def pushInternalContext(context: MultiTerm): PlainIfTerm = {
+    new PlainIfTerm(value.pushInternalContext(context),condition)
+  }
 
-  override def or(x: MultiTerm): MultiTerm = ???
-
-  override def compatibleOr(x: MultiTerm): MultiTerm = ???
 }
 
+class IfTermInExternalContext(term: PlainIfTerm, externContext: MultiTerm)
+   extends TermInExternalContext(term,externContext)
+   with IfTerm
+{
+
+  override def value: MultiTerm = term.value
+
+  override def condition: PointTerm = term.condition
+
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    new IfTermInExternalContext(term.pushInternalContext(context),externContext)
+  }
+
+  override def or(x: MultiTerm): MultiTerm = defaultOrInExternalContext(x)
+
+}
+
+object IfTerm
+{
+
+  object Kind extends IfTermKind
+
+  def apply(value: MultiTerm, condition: PointTerm): MultiTerm = {
+    value.kind match {
+      case k: EmptyTermKind => EmptyTerm
+      case k: IfTermKind => val iv = k.guarded(value)
+        IfTerm(iv.value,KernelLanguage.And(condition,iv.condition))
+    }
+  }
+
+
+}

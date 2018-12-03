@@ -1,18 +1,70 @@
 package termware
 
-trait StarTerm extends MultiTerm
+trait StarTerm extends MultiTerm with AndSetTerm
 {
 
   def context: MultiTerm
 
+  override lazy val kind: MultiTermKind = StarTerm.Kind
+
   override def subst(context: MultiTerm): MultiTerm = this
+
+  override def mapReduce[A](map: MultiTerm => A)(reduce: (A, A) => A)(zero: => A): A = {
+    zero
+  }
+
+  override def members(): Seq[MultiTerm] = Seq.empty
+
+}
+
+object ContextLessStarTerm extends StarTerm with NoExternalContext
+{
+  override def context: MultiTerm = EmptyTerm
+
+  override def resolve(term: MultiTerm): MultiTerm = term
+
+  override def apply(term: PointTerm): MultiTerm = EmptyTerm
+
+  override def unify(arg: MultiTerm): MultiTerm = arg
+
+  override def or(x: MultiTerm): MultiTerm = this
+
+  override def and(x: MultiTerm): MultiTerm = x
+
+  override def orElse(x: MultiTerm): MultiTerm = this
+
+  override def cond(x: PointTerm): MultiTerm = new PlainIfTerm(this, x)
+
+  override def externalContext(): MultiTerm = this
+
+  override def setExternalContext(context: MultiTerm): MultiTerm = {
+     new ContextStarTerm(EmptyTerm,context)
+  }
+
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    if (context.isEmpty()) {
+      this
+    } else {
+      new ContextStarTerm(context, StarTerm.U)
+    }
+  }
+
+}
+
+object StarTerm {
+
+  object Kind extends StarTermKind
+
+  val U = ContextLessStarTerm
 
 
 }
 
-class PlainStarTerm(override val context: MultiTerm) extends StarTerm {
 
-  override def kind: MultiTermKind = StarTerm
+case class ContextStarTerm(internalContext: MultiTerm, override val externalContext: MultiTerm) extends TermInContexts(ContextLessStarTerm, internalContext, externalContext) with StarTerm {
+
+
+  override def context: MultiTerm = internalContext
 
   override def apply(term: PointTerm): MultiTerm =
                                 context.resolve(term)
@@ -20,95 +72,37 @@ class PlainStarTerm(override val context: MultiTerm) extends StarTerm {
   override def resolve(term: MultiTerm): MultiTerm =
                                 EmptyTerm
 
-  override def resolved(): MultiTerm = this
-
-  override def unify(u: TermInContext): TermInContext = {
-    val check = context.resolve(KernelNames.checkName)
-    if (!check.isExists()) {
-      u
-    } else {
-      u.term.kind match {
-        case k: EmptyTermKind => TermInContext(EmptyTerm,u.context)
-        case k: ContradictionTermKind => u
-        case k: SetTermKind => k.set(u.term).mapReduce{
-            x => this unify InContext(x,u.context)
-          }(_ or _)(TermInContext.empty)
-        case k: OrElseTermKind => k.cast(u.term).firstMapped( x=>
-             unify(x ^^ u.context)
-          )(!_.term.isEmpty())(TermInContext.empty)
-        case k: PointTermKind =>
-          KernelLanguage.evalCheck(check,u.term,u.context)
-        case k: StarTermKind => val uCheck = k.star(u.term).context.resolve(KernelNames.checkName)
-          if (uCheck.isEmpty()) {
-            u
-          } else {
-            import KernelLanguage._
-            val newCheck = And(check,uCheck)
-            constantEvelBoolean(newCheck,this,u.context) match {
-              case None =>
-                val t = new PlainStarTerm(ArrowTerm(KernelNames.checkName,newCheck))
-                InContext(t,u.context)
-              case Some(v) =>
-                if (v) {
-                  TermInContext(StarTerm.U, u.context)
-                } else {
-                  EmptyTerm ^^ EmptyTerm
-                }
-            }
-          }
-      }
+  override def unify(u: MultiTerm): MultiTerm = {
+    ifExternalContext(u.externalContext()) { joinContext =>
+        TermInContexts(u,joinContext,EmptyTerm)
     }
   }
 
   override def and(x: MultiTerm): MultiTerm = {
-    val u = unify(TermInContext(x,EmptyTerm))
-    u.term.subst(u.context)
+    val u = unify(x)
+    u.subst(u.externalContext()).dropExternalContext()
   }
 
   override def or(x: MultiTerm): MultiTerm = {
-    x.kind match {
-      case k: EmptyTermKind => this
-      case k: ContradictionTermKind => x
-      case k: PointTermKind =>
-        val check = resolve(KernelNames.checkName);
-        if (check.isEmpty()) {
-          // TODO:  or contexts ?
-           this
+    if (externalContext.isStar() || this.externalContext == x.externalContext()) {
+        this  // TODO: clean internal context ???
+    } else if (x.externalContext.isStar()) {
+        //  *(L), x(*)
+        if (x.isStar()) {
+          // *(L), *(*)
+          x
         } else {
-           // TODO: try apply check, mb it's always true
-           // val pointCheck = generateCheckExpression(k.pointTerm());
-           val checkResult = KernelLanguage.evalCheck(check,x,ArrowTerm(KernelNames.thisName,x))
-           checkResult.term.kind match {
-             case k: PrimitiveTermKind =>
-               val pt= k.primitive(k.pointTerm(checkResult.term))
-               if (pt.primitiveTypeIndex == BooleanTermOps.primitiveTypeIndex) {
-                 val b = pt.valueAs[Boolean]
-                 if (b) {
-                   this
-                 } else {
-                   // TODO: allow SetTerm include non-point terms.
-                   SetTerm.create(this,x)
-                 }
-               } else {
-                 // TODO: allow SetTerm include non-point terms.
-                 SetTerm.create(this,x)
-               }
-           }
+          OrSetTerm.create(x,this)
         }
+    } else {
+       // *(L1), x(L2)
+        OrSetTerm.create(x, this)
     }
   }
 
-  override def compatibleOr(x: MultiTerm): MultiTerm = and(x)
-
 }
 
 
-object StarTerm extends StarTermKind {
-
-  val U = new PlainStarTerm(EmptyTerm)
-
-
-}
 
 
 

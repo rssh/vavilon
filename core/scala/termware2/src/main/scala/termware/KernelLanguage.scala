@@ -5,9 +5,7 @@ import termware.util.NameIndexed
 object KernelLanguage {
 
 
-  def evalCheck(check: MultiTerm, x: MultiTerm, context: MultiTerm): TermInContext = ???
-
-  def constantEvelBoolean(check: MultiTerm, x: MultiTerm, context: MultiTerm): Option[Boolean] = ???
+  def evalCheck(check: PointTerm, x: MultiTerm, context: MultiTerm): PointTerm = ???
 
   def contextWithFailure(context: MultiTerm, message: String): MultiTerm = {
     val failureArrow = ArrowTerm.apply(KernelNames.failureName,StringTerm(message))
@@ -21,12 +19,19 @@ object KernelLanguage {
     )))
   }
 
-  def And(x:MultiTerm, y:MultiTerm): MultiTerm = {
+  def And(x:MultiTerm, y:MultiTerm): PointTerm = {
     PlainStructuredTerm(KernelNames.andName,NameIndexed.fromSeq(Seq(
       AtomName("x") -> x,
       AtomName("y") -> y
     )))
-
   }
+
+  def Or(x:MultiTerm, y:MultiTerm): PointTerm = {
+    PlainStructuredTerm(KernelNames.orName,NameIndexed.fromSeq(Seq(
+      AtomName("x") -> x,
+      AtomName("y") -> y
+    )))
+  }
+
 
 }

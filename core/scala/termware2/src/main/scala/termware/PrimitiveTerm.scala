@@ -5,7 +5,7 @@ import termware.util.{FastRefBooleanOption, FastRefOption}
 
 import scala.reflect.runtime.universe
 
-trait PrimitiveTerm[T] extends PointTerm with ContextCarrierTerm
+trait PrimitiveTerm[T] extends PointTerm
 {
   def value:T
 
@@ -23,48 +23,74 @@ trait PrimitiveTerm[T] extends PointTerm with ContextCarrierTerm
      context.apply(this)
   }
 
-  override def pointUnify(ptk: PointTermKind, ct: InContext[PointTerm]): InContext[MultiTerm] = {
-    ct.term.kind match {
+  override def pointUnify(ptk: PointTermKind, term: PointTerm): MultiTerm = {
+    term.kind match {
       case k: PrimitiveTermKind =>
-        val pt = k.cast(ct.term)
+        val pt = k.cast(term)
         if (pt.primitiveTypeIndex == primitiveTypeIndex &&
           value == pt.value.asInstanceOf[T]
         ) {
-          ct
+          term
         } else {
-          InContext(EmptyTerm,KernelLanguage.contextWithFailure(ct.context,"value mismatch"))
+          EmptyTerm
+          // TODO: find way to trace
+          //InContext(EmptyTerm,KernelLanguage.contextWithFailure(ct.context,"value mismatch"))
         }
       case _ =>
-        InContext(EmptyTerm,KernelLanguage.contextWithFailure(ct.context,"value type mismatch"))
+        //InContext(EmptyTerm,KernelLanguage.contextWithFailure(ct.context,"value type mismatch"))
+        EmptyTerm
     }
   }
 
 }
 
 
-trait BasePrimitiveTerm[T] extends PrimitiveTerm[T] with PrimitiveName[T]
+
+trait BasePrimitiveTerm[T] extends PrimitiveTerm[T] with PrimitiveName[T] with NoExternalContext
 {
 
-  override def kind: PrimitiveTermKind = PrimitiveTerm
+  override def kind: PrimitiveTermKind = PrimitiveTerm.Kind
 
   override def name: Name = this
 
   override def termConstructor(x:T): BasePrimitiveTerm[T]
 
-  override lazy val resolved: PrimitiveTerm[T] = this
-
   override def context():MultiTerm = EmptyTerm
 
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    new ContextfullPrimitiveTerm[T](this, context, StarTerm.U)
+  }
 
 }
 
+class ContextfullPrimitiveTerm[T](term: BasePrimitiveTerm[T], internContext: MultiTerm, externContext:MultiTerm) extends TermInContexts(term,internContext,externContext) with PrimitiveTerm[T] {
 
+  override def value: T = term.value
 
-object PrimitiveTerm  extends PrimitiveTermKind
-{
-  override def primitive(x: PointTerm): BasePrimitiveTerm[_] = {
-    x.asInstanceOf[BasePrimitiveTerm[_]]
+  override def primitiveTypeIndex: Int = term.primitiveTypeIndex
+
+  override def ordering: Ordering[T] = term.ordering
+
+  override def termConstructor(x: T): PrimitiveTerm[T] = {
+    // TODO: think
+    term.termConstructor(x)
   }
+
+  override def name: Name = term.name
+
+  override def kind: PointTermKind = PrimitiveTerm.Kind
+}
+
+object PrimitiveTerm
+{
+
+  object Kind extends PrimitiveTermKind {
+    override def primitive(x: PointTerm): PrimitiveTerm[_] = {
+      x.asInstanceOf[PrimitiveTerm[_]]
+    }
+  }
+
+
 }
 
 
@@ -338,25 +364,3 @@ object BooleanTerm extends (Boolean => PrimitiveTerm[Boolean])
 
 }
 
-final case class ContextPrimitiveTerm[T](base: BasePrimitiveTerm[T], override val context: MultiTerm) extends PrimitiveTerm[T]
-{
-  override def value: T = base.value
-
-  override def primitiveTypeIndex: Int = base.primitiveTypeIndex
-
-  override def ordering: Ordering[T] = base.ordering
-
-  override def termConstructor(x: T): PrimitiveTerm[T] = ContextPrimitiveTerm(base.termConstructor(x),context)
-
-  override def name: Name = base.name
-
-  override def kind: PointTermKind = ContextPrimitiveTerm
-}
-
-
-object ContextPrimitiveTerm extends PrimitiveTermKind
-{
-  override def primitive(x: PointTerm): PrimitiveTerm[_] = {
-    x.asInstanceOf[ContextPrimitiveTerm[_]]
-  }
-}

@@ -10,96 +10,45 @@ trait PointTerm extends MultiTerm {
 
   override def kind: PointTermKind
 
-  override lazy val resolved: MultiTerm = resolve(this)
-
   override def apply(term: PointTerm): MultiTerm = EmptyTerm
 
-  override def unify(x: TermInContext): TermInContext = {
-    x.term.kind match {
-      case k: EmptyTermKind => x
-      case k: StarTermKind =>
-               val checkExpression = k.cast(x.term).resolve(KernelNames.checkName)
-               if (checkExpression.isEmpty()) {
-                 this ^^ x.context
-               } else {
-                 val condition = KernelLanguage.evalCheck(checkExpression,x.term, thisContext compatibleOr x.context )
-                 ???
-               }
-      case k: ContradictionTermKind => x
-      case k: PointTermKind => pointUnify(k,x.asInstanceOf[InContext[PointTerm]])
-      case k: SetTermKind => setUnify(k,x)
-      case k: OrElseTermKind => k.cast(x.term).firstMapped(_.unify(x))(! _.term.isEmpty()){
-        val failureContext = KernelLanguage.contextWithFailure(x.context,"none was found")
-        TermInContext(EmptyTerm,failureContext)
+  override def unify(x: MultiTerm): MultiTerm = {
+    val joinContext = x.externalContext() and externalContext()
+    if (joinContext.isEmpty()) {
+      EmptyTerm
+    } else {
+      val nx = x.setExternalContext(joinContext)
+      nx.kind match {
+        case k: EmptyTermKind => x
+        case k: StarTermKind => this
+        case k: PointTermKind => pointUnify(k, k.pointTerm(nx))
+        case k: OrSetTermKind => orSetUnify(k, x)
+        case k: OrElseTermKind => k.cast(x).firstMapped(_.unify(x))(!_.isEmpty()) {
+          EmptyTerm
+        }
       }
     }
   }
 
-  def pointUnify(ptk: PointTermKind, u: InContext[PointTerm]):TermInContext
+  def pointUnify(ptk: PointTermKind, u: PointTerm): MultiTerm
 
-  def setUnify(k:SetTermKind, u:InContext[MultiTerm]): TermInContext = {
-     val setTerm = k.set(u.term)
+  def orSetUnify(k:OrSetTermKind, u:MultiTerm): MultiTerm = {
+     val setTerm = k.orSet(u)
      // TODO:  recheck or, maybe create two copy for two different subst.
-     setTerm.mapReduce(ct => ct.unify(u))(_ or _)(u.copy(term = EmptyTerm))
+     setTerm.mapReduce(ct => ct.unify(u))(_ or _)(EmptyTerm)
   }
 
 
-  override def and(x: MultiTerm): MultiTerm = {
-    x.kind match {
-      case k: StarTermKind => val sx = k.star(x)
-        val check = sx.resolve(KernelNames.checkName)
-        if (check.isExists()) {
-          // will be changed to  If (this.check() , ...
-          val checkResult = KernelLanguage.evalCheck(check,this,ArrowTerm(KernelNames.thisName,this))
-          checkResult.term match {
-            case BooleanTerm(value) =>
-              if (value) {
-                this
-              } else {
-                EmptyTerm
-              }
-            case other =>
-              // TODO: will be changed
-              // in theory we should add check here.
-              this
-          }
-        } else {
-          this
-        }
-      case k: EmptyTermKind => k.cast(x)
-      case k: ContradictionTermKind => x
-      case k: SetTermKind => val selected = k.set(x).selectAll(TermInContext(this,EmptyTerm))
-        val s0: MultiTerm = EmptyTerm
-        selected.foldLeft(s0){ case (s,e) =>
-          val ce = e.term.subst(e.context)
-          (this and ce) or s
-        }
-      case k: PointTermKind => pointAnd(k,k.pointTerm(x))
-      case k: OrElseTermKind =>
-        k.cast(x).map(this and _)
-    }
-  }
-
-  def pointAnd(ptk:PointTermKind, x:PointTerm):MultiTerm = {
-    pointUnify(ptk,InContext(x,EmptyTerm)).term.resolved()
-  }
 
   def or(x:MultiTerm): MultiTerm = {
     x.kind match {
-      case k:PointTermKind => SetTerm.create(this,k.pointTerm(x))
+      case k:PointTermKind => OrSetTerm.createPoints(this,k.pointTerm(x))
       case k:EmptyTermKind => this
-      case k:SetTermKind => k.set(x) or x
+      case k:OrSetTermKind => k.orSet(x) or this
       case k:OrElseTermKind => k.cast(x).map(_ or x)
       case k:StarTermKind => k.cast(x)
-      case k:ContradictionTermKind => x
     }
   }
-
-  override def compatibleOr(x: MultiTerm): MultiTerm = {
-     this and x  // will be overrided in Arrow,
-  }
-
-  def generateCheckExpression(): MultiTerm = ???
 
   lazy val thisContext = ArrowTerm(KernelNames.thisName,this)
 

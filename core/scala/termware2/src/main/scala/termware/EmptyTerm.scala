@@ -1,13 +1,13 @@
 package termware
 
-import termware.util.FastRefOption
+import termware.util.{FastRefOption, SetTerm}
 
 
-final object EmptyTerm extends MultiTerm  with SetTerm
+final object EmptyTerm extends MultiTerm with OrSetTerm with NoExternalContext
 {
   override def kind: MultiTermKind = EmptyTermKind
 
-  override lazy val resolved: MultiTerm = this
+  final val Kind = EmptyTermKind
 
   override def resolve(term:MultiTerm): MultiTerm = EmptyTerm
 
@@ -18,25 +18,19 @@ final object EmptyTerm extends MultiTerm  with SetTerm
 
   override def subst(context: MultiTerm): MultiTerm = this
 
-  override def unify(x: TermInContext): TermInContext = TermInContext.empty
+  override def unify(x: MultiTerm): MultiTerm = this
 
   override def or(x: MultiTerm): MultiTerm = x
 
   override def and(x: MultiTerm): MultiTerm = this
 
-  override def compatibleOr(x: MultiTerm): MultiTerm = x
-
-  override def applyOne(term: PointTerm): MultiTerm = apply(term)
-
-  override def applyAll(term: PointTerm): MultiTerm = apply(term)
-
-  override def selectOne(pattern: TermInContext): TermInContext = TermInContext(this,pattern.context)
-
-  override def selectAll(pattern: TermInContext): Seq[TermInContext] = Seq.empty
-
   override def mapReduce[A](map: MultiTerm => A)(reduce: (A, A) => A)(zero: =>A) = zero
 
   override def members(): Seq[PointTerm] = Seq.empty
+
+  // adding context to empty term is useless.
+  override def pushInternalContext(context: MultiTerm): MultiTerm = this
+
 }
 
 object IsEmptyTerm

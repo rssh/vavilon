@@ -37,48 +37,45 @@ trait StructuredTerm extends PointTerm  with ContextCarrierTerm {
 
   override def context(): MultiTerm = nameTerm.context()
 
-  override def pointUnify(ptk: PointTermKind, p: PointTermInContext): TermInContext = {
-    val term = p.term
+  override def pointUnify(ptk: PointTermKind, term: PointTerm): MultiTerm = {
     term.kind match {
       case k:StructuredTermKind =>
-        structuredUnify(k,InContext(k.cast(term),p.context))
-      case _ => TermInContext(EmptyTerm,p.context)
+        structuredUnify(k,k.cast(term))
+      case _ => EmptyTerm
     }
   }
 
-  def structuredUnify(ptk: PointTermKind, u: InContext[StructuredTerm]): TermInContext = {
-    val otherTerm = u.term
+  def structuredUnify(ptk: PointTermKind, otherTerm: StructuredTerm): MultiTerm = {
     if (arity == otherTerm.arity) {
-      val InContext(unifiedName,nContext) = nameTerm.unify(InContext(otherTerm.nameTerm,u.context))
+      val unifiedName = nameTerm.addExternalContext(externalContext()).unify(otherTerm.nameTerm)
       if (unifiedName.isExists()) {
         unifiedName.kind match {
           case x:AtomTermKind =>
             val newName = x.cast(x.pointTerm(unifiedName))
             val newSubterms = NameIndexed.empty[MultiTerm]
-            val s0:InContext[MultiTerm] = InContext(
-                             StructuredTerm.create(newName,newSubterms),
-                             nContext)
-            namedSubterms().foldWhile(s0)(_.term.isExists()){ case (s,(n,v)) =>
+            val s0:MultiTerm = StructuredTerm.create(newName,newSubterms).setExternalContext(unifiedName.externalContext())
+            namedSubterms().foldWhile(s0)(_.isExists()){ case (s,(n,v)) =>
               otherTerm.get(n) match {
                 case None => s
                 case Some(otherValue) =>
-                  s.term match {
+                  s match {
                     case IsStructuredTerm(ss) =>
-                      val InContext(nextValue,nextContext) = v.unify(TermInContext(otherValue,nContext))
-                      TermInContext(ss.updated(n,nextValue),nextContext)
+                      v.addExternalContext(s) unify otherValue
                     case _ => s
                   }
               }
             }
           case otherKind =>
             //TODO: add error to context.
-            TermInContext(EmptyTerm,nContext)
+            EmptyTerm
         }
       } else {
-         TermInContext(EmptyTerm,KernelLanguage.contextWithFailure(u.context,"name mismatch"))
+        EmptyTerm
+        // TermInContext(EmptyTerm,KernelLanguage.contextWithFailure(u.context,"name mismatch"))
       }
     } else {
-      TermInContext(EmptyTerm,KernelLanguage.contextWithFailure(u.context,"arity mismatch"))
+      EmptyTerm
+      //TermInContext(EmptyTerm,KernelLanguage.contextWithFailure(u.context,"arity mismatch"))
     }
   }
 
@@ -99,8 +96,8 @@ object StructuredTerm extends StructuredTermKind
 
 }
 
-  case class PlainStructuredTerm(override val nameTerm: AtomTerm,
-                               indexes:NameIndexed[MultiTerm]) extends StructuredTerm
+case class PlainStructuredTerm(override val nameTerm: AtomTerm,
+                               indexes:NameIndexed[MultiTerm]) extends StructuredTerm with NoExternalContext
 {
   override type Self = PlainStructuredTerm
 
@@ -135,6 +132,17 @@ object StructuredTerm extends StructuredTermKind
     PlainStructuredTerm(nameTerm,indexes.map(f))
   }
 
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    val newNameM = nameTerm.pushInternalContext(context)
+    newNameM.kind match {
+      case k: AtomTermKind => val newName = k.atomTerm(k.pointTerm(newNameM))
+                              PlainStructuredTerm(newName,indexes)
+      case other => // impossible.
+            // TODO: restore contradiction term ?
+            EmptyTerm
+    }
+
+  }
 
 }
 
