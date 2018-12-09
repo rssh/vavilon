@@ -10,7 +10,6 @@ class KindCheckSpec extends FunSpec {
     x.kind match {
       case pk:PointTermKind => "P" + ptKindAnalysis(pk.pointTerm(x))
       case ek:EmptyTermKind => "E"
-      case ck:ContradictionTermKind => "_"
       case sk:StarTermKind => "*"
     }
   }
@@ -27,7 +26,6 @@ class KindCheckSpec extends FunSpec {
 
   it("Check kind of all terms") {
     assert(mtKindAnalysis(BooleanTermBase(true))=="PP")
-    assert(mtKindAnalysis(new ContradictionTerm(EmptyTerm))=="_")
     assert(mtKindAnalysis(EmptyTerm)=="E")
     assert(mtKindAnalysis(StarTerm.U)=="*")
     assert(mtKindAnalysis(ArrowTerm(EmptyTerm,EmptyTerm))=="P->")

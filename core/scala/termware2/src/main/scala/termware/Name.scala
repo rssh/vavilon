@@ -62,7 +62,7 @@ trait PrimitiveName[T] extends Name
   * Singleton name, each name have unique type-index. (example: Universum)
   * @param typeIndex
   */
-abstract class SingletonName(override val typeIndex: Int) extends Name with SingletonNameKind with NoExternalContext
+abstract class SingletonName(override val typeIndex: Int) extends Name with SingletonNameKind with PointTermNoExternalContext
 {
   override final type Carrier = Unit
 
@@ -101,7 +101,7 @@ abstract class SingletonName(override val typeIndex: Int) extends Name with Sing
   }
 
   override def pushInternalContext(context: MultiTerm): MultiTerm = {
-    new ContextfullSingletonName(this,context,StarTerm.U)
+    new SingletonNameInInternalContext(this,context)
   }
 
 }
@@ -125,9 +125,51 @@ class ContextfullSingletonName(term: SingletonName, internContext: MultiTerm, ex
   }
 
   override def context(): MultiTerm = internContext
+
+  override def dropExternalContext(): PointTerm with NoExternalContext = {
+    if (internContext.isEmpty()) {
+      term
+    } else {
+      new SingletonNameInInternalContext(term, internContext)
+    }
+  }
+
 }
 
-final case class AtomName(s:String) extends StringLikeName(s) with AtomTerm with NoExternalContext
+class SingletonNameInInternalContext(term: SingletonName, internContext: MultiTerm) extends Name with SingletonNameKind  with PointTermNoExternalContext {
+
+  override type Carrier = Unit
+
+  override def typeIndex: Int = term.typeIndex
+
+  override def compareSameTypeIndex(that: Name): Int = 0
+
+  override def carrier: Carrier = ()
+
+  override def singletonName(): SingletonName = term
+
+  override def context(): MultiTerm = internContext
+
+  override def kind: PointTermKind = term.kind
+
+  override def pointUnify(ptk: PointTermKind, u: PointTerm): MultiTerm = term.pointUnify(ptk,u)
+
+  override def subst(context: MultiTerm): MultiTerm = {
+    val substContext = this.context().subst(context)
+    if (substContext.isEmpty()) {
+       term.subst(context)
+    } else {
+       term.subst(context).pushInternalContext(substContext)
+    }
+  }
+
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+     new SingletonNameInInternalContext(term, thisContext orElse context)
+  }
+
+}
+
+final case class AtomName(s:String) extends StringLikeName(s) with AtomTerm with PointTermNoExternalContext
 {
 
   override def kind = AtomName
@@ -139,7 +181,7 @@ final case class AtomName(s:String) extends StringLikeName(s) with AtomTerm with
   def context(): MultiTerm = EmptyTerm
 
   override def pushInternalContext(context: MultiTerm): MultiTerm = {
-    ContextAtomTerm(this,context,StarTerm.U)
+    ContextfullAtomTerm(this,context,StarTerm.U)
   }
 
 }

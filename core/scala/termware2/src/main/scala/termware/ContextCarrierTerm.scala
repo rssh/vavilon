@@ -18,8 +18,19 @@ trait ContextCarrierTerm extends PointTerm {
     case x: StarTermKind => EmptyTerm
     case x: OrSetTermKind =>
        x.orSet(term).mapReduce(x => this.resolve(x))(_ or _)(EmptyTerm)
+    case x: AndSetTermKind =>
+       x.andSet(term).mapReduce(x => this.resolve(x))(_ and _)(StarTerm.U)
     case x: OrElseTermKind =>
       x.cast(term).firstNotEmpty(_.resolve(term))
+    case x: IfTermKind =>
+      val ifx = x.guarded(term)
+      // TODO: mb resolve ifx condition, think
+      val check = KernelLanguage.evalCheck(ifx.condition,ifx.value,externalContext())
+      check match {
+        case BooleanTerm(v) => if (v) resolve(ifx.value) else EmptyTerm
+        case _ => IfTerm(resolve(ifx.value),check)
+      }
+
   }
 
 

@@ -3,7 +3,7 @@ package termware
 import termware.util.FastRefOption
 
 
-case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm with NoExternalContext
+case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm with PointTermNoExternalContext
 {
   override def name: Name = KernelNames.arrowName
 

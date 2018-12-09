@@ -46,7 +46,7 @@ trait PrimitiveTerm[T] extends PointTerm
 
 
 
-trait BasePrimitiveTerm[T] extends PrimitiveTerm[T] with PrimitiveName[T] with NoExternalContext
+trait BasePrimitiveTerm[T] extends PrimitiveTerm[T] with PrimitiveName[T] with PointTermNoExternalContext
 {
 
   override def kind: PrimitiveTermKind = PrimitiveTerm.Kind
@@ -57,9 +57,39 @@ trait BasePrimitiveTerm[T] extends PrimitiveTerm[T] with PrimitiveName[T] with N
 
   override def context():MultiTerm = EmptyTerm
 
-  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+  override def pushInternalContext(context: MultiTerm): PrimitiveTerm[T] = {
     new ContextfullPrimitiveTerm[T](this, context, StarTerm.U)
   }
+
+}
+
+class PrimitiveTermInInternalContextOnly[T](term: BasePrimitiveTerm[T], internContext: MultiTerm) extends TermInInternalContextOnly(term, internContext) with PrimitiveTerm[T] with ContextCarrierTerm with PointTermNoExternalContext
+{
+  override def value: T = term.value
+
+  override def primitiveTypeIndex: Int = term.primitiveTypeIndex
+
+  override def ordering: Ordering[T] = term.ordering
+
+  override def termConstructor(x: T): PrimitiveTerm[T] =
+    new PrimitiveTermInInternalContextOnly(term.termConstructor(x),internContext)
+
+  override def name: Name = term.name
+
+  override def kind: PointTermKind = term.kind
+
+  override def context(): MultiTerm = internContext
+
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    if (context.isEmpty()) {
+      this
+    } else {
+      new PrimitiveTermInInternalContextOnly[T](term, context orElse internContext)
+    }
+  }
+
+
+
 
 }
 
@@ -79,6 +109,16 @@ class ContextfullPrimitiveTerm[T](term: BasePrimitiveTerm[T], internContext: Mul
   override def name: Name = term.name
 
   override def kind: PointTermKind = PrimitiveTerm.Kind
+
+  override def dropExternalContext(): PrimitiveTerm[T] with NoExternalContext = {
+    if (internContext.isEmpty()) {
+      term
+    } else {
+      new PrimitiveTermInInternalContextOnly[T](term, internContext)
+    }
+  }
+
+
 }
 
 object PrimitiveTerm

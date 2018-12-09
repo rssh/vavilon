@@ -49,6 +49,8 @@ object OrSetTerm
     new SeqOrSetTerm(seq)
   }
 
+  object Kind extends OrSetTermKind
+
 }
 
 
@@ -130,27 +132,41 @@ class SeqOrSetTerm(inSeq: Seq[MultiTerm]) extends OrSetTerm with SeqSetTerm with
 
   override def members(): Seq[MultiTerm] = seq
 
-  override def kind: MultiTermKind = SeqOrSetTermKind
+  override def kind: MultiTermKind = OrSetTerm.Kind
 
   override def resolve(term: MultiTerm): MultiTerm = {
     seq.view.map(_.resolve(term)).filter(!_.isEmpty()).fold(EmptyTerm)(_ or _)
   }
 
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    new SeqOrSetTerm(seq.map(_.pushInternalContext(context)))
+  }
 
 }
 
-class OrSetInExternalContext(term: OrSetTerm with NoExternalContext, externContext: MultiTerm) extends TermInExternalContext(term,externContext) {
+class OrSetInExternalContext(term: OrSetTerm with NoExternalContext, externContext: MultiTerm) extends TermInExternalContext(term,externContext) with OrSetTerm {
 
-  
+  override def kind: MultiTermKind = OrSetTerm.Kind
+
+  override def mapReduce[A](map: MultiTerm => A)(reduce: (A, A) => A)(zero: => A): A = {
+    term.mapReduce(x => map(TermInExternalContext(x,externContext)))(reduce)(zero)
+  }
+
+  override def members(): Seq[MultiTerm] = term.members()
+
+  override def or(x: MultiTerm): MultiTerm = {
+     if (externContext == x.externalContext()) {
+       val nterm = term or x.dropExternalContext()
+       TermInExternalContext(nterm,externContext)
+     } else {
+       OrSetTerm._fromSeq(Seq(this,x))
+     }
+  }
 
 }
 
 
 
-object SeqOrSetTermKind extends OrSetTermKind
-{
-
-}
 
 
 object IsOrSet

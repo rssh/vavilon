@@ -36,7 +36,7 @@ trait AtomTerm extends PointTerm with ContextCarrierTerm
 }
 
 
-case class ContextLessAtomTerm(override val name: AtomName) extends AtomTerm with NoExternalContext {
+case class ContextLessAtomTerm(override val name: AtomName) extends AtomTerm with PointTermNoExternalContext {
 
   override def context(): MultiTerm = EmptyTerm
 
@@ -44,37 +44,55 @@ case class ContextLessAtomTerm(override val name: AtomName) extends AtomTerm wit
     if (context.isStar()) {
       this
     } else {
-      ContextAtomTerm(name,EmptyTerm,context)
+      ContextfullAtomTerm(name,EmptyTerm,context)
     }
 
   override def pushInternalContext(context: MultiTerm): MultiTerm = {
     if (context.isEmpty()) {
       this
     } else {
-      ContextAtomTerm(name,context,StarTerm.U)
+      new AtomTermInInternalContext(name,context)
+    }
+  }
+
+}
+
+case class AtomTermInInternalContext(override val name: AtomName, override val context:MultiTerm) extends
+   TermInInternalContextOnly(name,context) with AtomTerm with PointTermNoExternalContext
+{
+  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+    new AtomTermInInternalContext(name, context orElse this.context )
+  }
+
+
+
+}
+
+case class ContextfullAtomTerm(override val name: AtomName,
+                           override val context:MultiTerm = EmptyTerm,
+                           externContext: MultiTerm = StarTerm.U
+                          ) extends TermInContexts(name,context,externContext)
+                              with AtomTerm  {
+
+  override def dropExternalContext(): PointTerm with NoExternalContext = {
+    if (context.isEmpty()) {
+      name
+    } else {
+      new AtomTermInInternalContext(name, context)
     }
   }
 
 }
 
 
-case class ContextAtomTerm(override val name: AtomName,
-                           override val context:MultiTerm = EmptyTerm,
-                           externContext: MultiTerm = StarTerm.U
-                          ) extends TermInContexts(name,context,externContext) with AtomTerm {
-
-
-}
-
-
-object ContextAtomTerm
+object ContextfullAtomTerm
 {
 
   def apply(name:AtomName, context:MultiTerm): AtomTerm = {
     if (context.isEmpty()) {
       name
     } else {
-      ContextAtomTerm(name,context)
+      ContextfullAtomTerm(name,context)
     }
   }
 

@@ -133,16 +133,46 @@ class IfTermInExternalContext(term: PlainIfTerm, externContext: MultiTerm)
 
 }
 
+
 object IfTerm
 {
 
   object Kind extends IfTermKind
 
   def apply(value: MultiTerm, condition: PointTerm): MultiTerm = {
-    value.kind match {
-      case k: EmptyTermKind => EmptyTerm
-      case k: IfTermKind => val iv = k.guarded(value)
-        IfTerm(iv.value,KernelLanguage.And(condition,iv.condition))
+    if (value.externalContext().isStar() && condition.isStar()) {
+      value.kind match {
+        case k: EmptyTermKind => EmptyTerm
+        case k: IfTermKind => val iv = k.guarded(value)
+          IfTerm(iv.value,KernelLanguage.And(condition,iv.condition))
+        case k: StarTermKind =>
+          new PlainIfTerm(value,condition)
+        case k: OrSetTermKind =>
+          k.orSet(value).mapReduce(IfTerm(_,condition))(_ or _)(EmptyTerm)
+        case k: AndSetTermKind =>
+          new PlainIfTerm(value,condition)
+      }
+    } else {
+      value.ifExternalContext(condition.externalContext()) { joinContext =>
+        val pointCondition = condition.dropExternalContext().asInstanceOf[PointTerm]
+        val wec = IfTerm(value.dropExternalContext(),condition.dropExternalContext())
+        wec.kind match {
+          case k: EmptyTermKind => wec
+          case k: IfTermKind =>
+            if (wec.externalContext().isStar()) {
+              val g = k.guarded(wec)
+              if (g.isInstanceOf[PlainIfTerm]) {
+                new IfTermInExternalContext(g.asInstanceOf[PlainIfTerm],joinContext)
+              } else {
+                new IfTermInExternalContext(PlainIfTerm(g.value, g.condition), joinContext)
+              }
+            } else {
+              // impossible
+              TermInExternalContext(wec,joinContext)
+            }
+          case _ => TermInExternalContext(wec,joinContext)
+        }
+      }
     }
   }
 

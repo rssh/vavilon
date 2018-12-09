@@ -30,6 +30,7 @@ trait PointTerm extends MultiTerm {
     }
   }
 
+
   def pointUnify(ptk: PointTermKind, u: PointTerm): MultiTerm
 
   def orSetUnify(k:OrSetTermKind, u:MultiTerm): MultiTerm = {
@@ -37,7 +38,6 @@ trait PointTerm extends MultiTerm {
      // TODO:  recheck or, maybe create two copy for two different subst.
      setTerm.mapReduce(ct => ct.unify(u))(_ or _)(EmptyTerm)
   }
-
 
 
   def or(x:MultiTerm): MultiTerm = {
@@ -49,6 +49,9 @@ trait PointTerm extends MultiTerm {
       case k:StarTermKind => k.cast(x)
     }
   }
+
+  override def dropExternalContext(): PointTerm with NoExternalContext
+
 
   lazy val thisContext = ArrowTerm(KernelNames.thisName,this)
 

@@ -97,7 +97,7 @@ object StructuredTerm extends StructuredTermKind
 }
 
 case class PlainStructuredTerm(override val nameTerm: AtomTerm,
-                               indexes:NameIndexed[MultiTerm]) extends StructuredTerm with NoExternalContext
+                               indexes:NameIndexed[MultiTerm]) extends StructuredTerm with PointTermNoExternalContext
 {
   override type Self = PlainStructuredTerm
 

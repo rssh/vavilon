@@ -88,7 +88,7 @@ trait MultiTerm
 
   def externalContext(): MultiTerm
 
-  def dropExternalContext(): MultiTerm
+  def dropExternalContext(): MultiTerm with NoExternalContext
 
 
   /**

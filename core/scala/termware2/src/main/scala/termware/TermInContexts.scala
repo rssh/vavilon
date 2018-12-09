@@ -1,5 +1,15 @@
 package termware
 
+
+abstract class TermInInternalContextOnly(term: NoExternalContext, val internContext: MultiTerm) extends MultiTerm with NoExternalContext
+{
+
+
+  //override def kind: MultiTermKind = term.kind
+
+
+}
+
 abstract class TermInExternalContext(term: NoExternalContext, externContext: MultiTerm) extends MultiTerm
 {
 
@@ -31,7 +41,7 @@ abstract class TermInExternalContext(term: NoExternalContext, externContext: Mul
 
   override def externalContext: MultiTerm = externalContext
 
-  override def dropExternalContext(): MultiTerm = term
+  override def dropExternalContext(): MultiTerm with NoExternalContext = term
 
   override def setExternalContext(context: MultiTerm): MultiTerm =
     TermInExternalContext(term, context)
@@ -44,6 +54,8 @@ abstract class TermInExternalContext(term: NoExternalContext, externContext: Mul
   }
 
 }
+
+
 
 object TermInExternalContext
 {
