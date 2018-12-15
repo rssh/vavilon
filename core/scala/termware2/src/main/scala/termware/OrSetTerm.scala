@@ -22,6 +22,7 @@ trait OrSetTerm extends SetTerm {
     mapReduce(_ unify arg)(_ or _)(EmptyTerm)
   }
 
+  override def dropExternalContext(): OrSetTerm with NoExternalContext
 
 }
 
@@ -50,6 +51,7 @@ object OrSetTerm
   }
 
   object Kind extends OrSetTermKind
+
 
 }
 
@@ -83,7 +85,7 @@ class SeqOrSetTerm(inSeq: Seq[MultiTerm]) extends OrSetTerm with SeqSetTerm with
   override def or(otherTerm: MultiTerm): MultiTerm = {
     otherTerm.kind match {
       case k:PointTermKind =>
-        addOrPoint(k.pointTerm(otherTerm))
+        addOrElement(k.pointTerm(otherTerm))
       case k:EmptyTermKind =>
         this
       case k:StarTermKind =>
@@ -98,13 +100,15 @@ class SeqOrSetTerm(inSeq: Seq[MultiTerm]) extends OrSetTerm with SeqSetTerm with
              case _ => s
            }
         }
+      case _: AndSetTermKind | _:IfTermKind =>
+        addOrElement(otherTerm)
       case k: OrElseTermKind =>
         k.cast(otherTerm).map(p => this or p)
     }
   }
 
 
-  def addOrPoint(otherTerm: PointTerm): MultiTerm = {
+  private def addOrElement(otherTerm: MultiTerm): MultiTerm = {
     var i = 0
     var found = false
     var nseq = seq
@@ -142,6 +146,8 @@ class SeqOrSetTerm(inSeq: Seq[MultiTerm]) extends OrSetTerm with SeqSetTerm with
     new SeqOrSetTerm(seq.map(_.pushInternalContext(context)))
   }
 
+  override def dropExternalContext(): OrSetTerm with NoExternalContext = this
+
 }
 
 class OrSetInExternalContext(term: OrSetTerm with NoExternalContext, externContext: MultiTerm) extends TermInExternalContext(term,externContext) with OrSetTerm {
@@ -163,9 +169,37 @@ class OrSetInExternalContext(term: OrSetTerm with NoExternalContext, externConte
      }
   }
 
+  override def dropExternalContext(): OrSetTerm with NoExternalContext =
+    term
+
 }
 
+object OrSetInExternalContext
+{
 
+  def apply(term: OrSetTerm with NoExternalContext, externContext: MultiTerm): OrSetTerm = {
+    if (externContext.isEmpty()) {
+      EmptyTerm
+    } else if (externContext.isStar()) {
+      term
+    } else {
+      new OrSetInExternalContext(term, externContext)
+    }
+  }
+
+  def unapply(arg: MultiTerm): FastRefOption[(OrSetTerm with NoExternalContext, MultiTerm)] = {
+    arg.kind match {
+      case k:OrSetTermKind => val orSet = k.orSet(arg)
+        if (orSet.externalContext().isStar()) {
+          FastRefOption.empty
+        }  else {
+          FastRefOption(orSet.dropExternalContext(),orSet.externalContext())
+        }
+      case _ => FastRefOption.empty
+    }
+  }
+
+}
 
 
 

@@ -41,6 +41,8 @@ object ContextLessStarTerm extends StarTerm with NoExternalContext
      new ContextStarTerm(EmptyTerm,context)
   }
 
+  override def dropExternalContext(): StarTerm with NoExternalContext = this
+
   override def pushInternalContext(context: MultiTerm): MultiTerm = {
     if (context.isEmpty()) {
       this
@@ -99,6 +101,8 @@ case class ContextStarTerm(internalContext: MultiTerm, override val externalCont
         OrSetTerm.create(x, this)
     }
   }
+
+  override def dropExternalContext(): StarTerm with NoExternalContext = StarTerm.U
 
 }
 

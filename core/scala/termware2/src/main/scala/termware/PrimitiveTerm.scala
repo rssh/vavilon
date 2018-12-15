@@ -5,8 +5,10 @@ import termware.util.{FastRefBooleanOption, FastRefOption}
 
 import scala.reflect.runtime.universe
 
-trait PrimitiveTerm[T] extends PointTerm
+trait PrimitiveTerm[T] extends PointTerm with PrimitiveName[T]
 {
+  type Value = T
+
   def value:T
 
   def primitiveTypeIndex: Int
@@ -42,6 +44,12 @@ trait PrimitiveTerm[T] extends PointTerm
     }
   }
 
+  /**
+    * Term without any contexts
+    * @return
+    */
+  def base: BasePrimitiveTerm[T]
+
 }
 
 
@@ -58,8 +66,14 @@ trait BasePrimitiveTerm[T] extends PrimitiveTerm[T] with PrimitiveName[T] with P
   override def context():MultiTerm = EmptyTerm
 
   override def pushInternalContext(context: MultiTerm): PrimitiveTerm[T] = {
-    new ContextfullPrimitiveTerm[T](this, context, StarTerm.U)
+    if (context.isEmpty()) {
+      this
+    } else {
+      new PrimitiveTermInInternalContextOnly[T](this, context)
+    }
   }
+
+  override def base = this
 
 }
 
@@ -88,7 +102,9 @@ class PrimitiveTermInInternalContextOnly[T](term: BasePrimitiveTerm[T], internCo
     }
   }
 
+  override def ops = term.ops
 
+  override def base: BasePrimitiveTerm[T] = term
 
 
 }
@@ -110,6 +126,8 @@ class ContextfullPrimitiveTerm[T](term: BasePrimitiveTerm[T], internContext: Mul
 
   override def kind: PointTermKind = PrimitiveTerm.Kind
 
+  override def context(): MultiTerm = internContext
+
   override def dropExternalContext(): PrimitiveTerm[T] with NoExternalContext = {
     if (internContext.isEmpty()) {
       term
@@ -118,6 +136,9 @@ class ContextfullPrimitiveTerm[T](term: BasePrimitiveTerm[T], internContext: Mul
     }
   }
 
+  override def ops = term.ops
+
+  override def base = term
 
 }
 

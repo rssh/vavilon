@@ -23,9 +23,21 @@ trait PointTerm extends MultiTerm {
         case k: StarTermKind => this
         case k: PointTermKind => pointUnify(k, k.pointTerm(nx))
         case k: OrSetTermKind => orSetUnify(k, x)
-        case k: OrElseTermKind => k.cast(x).firstMapped(_.unify(x))(!_.isEmpty()) {
+        case k: OrElseTermKind => k.cast(x).firstMapped(unify(_))(!_.isEmpty()) {
           EmptyTerm
         }
+        case k: AndSetTermKind =>
+          val andSet = k.andSet(x)
+          andSet.mapReduce(ct => unify(ct))(_ and _)(StarTerm.U)
+        case k: IfTermKind =>
+          val ifTerm = k.guarded(nx)
+          unify(ifTerm.value) match {
+            case EmptyTerm => EmptyTerm
+            case other => val ec = other.externalContext()
+              // subst leave same kind, but this is not in types.
+              val newCondition = ifTerm.condition.subst(ec).asInstanceOf[PointTerm]
+              IfTerm(other.dropExternalContext(),newCondition).setExternalContext(ec)
+          }
       }
     }
   }
@@ -42,12 +54,18 @@ trait PointTerm extends MultiTerm {
 
   def or(x:MultiTerm): MultiTerm = {
     x.kind match {
-      case k:PointTermKind => OrSetTerm.createPoints(this,k.pointTerm(x))
+      case k:PointTermKind => orPoint(k,k.pointTerm(x))
       case k:EmptyTermKind => this
       case k:OrSetTermKind => k.orSet(x) or this
+      case k:AndSetTermKind => OrSetTerm._fromSeq(Seq(this,x))
       case k:OrElseTermKind => k.cast(x).map(_ or x)
       case k:StarTermKind => k.cast(x)
+      case k:IfTermKind => OrSetTerm._fromSeq(Seq(this,x))
     }
+  }
+
+  def orPoint(k:PointTermKind, x:PointTerm): MultiTerm = {
+    OrSetTerm.createPoints(this,x)
   }
 
   override def dropExternalContext(): PointTerm with NoExternalContext

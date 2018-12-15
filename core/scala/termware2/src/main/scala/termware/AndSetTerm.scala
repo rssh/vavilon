@@ -1,6 +1,6 @@
 package termware
 
-import termware.util.{SeqSetTerm, SetTerm}
+import termware.util.{FastRefOption, SeqSetTerm, SetTerm}
 
 /**
   * This is one non-contradiction term.
@@ -10,6 +10,7 @@ trait AndSetTerm extends SetTerm {
 
   override def kind: MultiTermKind = AndSetTerm.Kind
 
+  override def dropExternalContext(): AndSetTerm with NoExternalContext
 
 }
 
@@ -21,6 +22,7 @@ object AndSetTerm  {
     new SeqAndSetTerm(subterms)
 
   object Kind extends AndSetTermKind
+
 
 }
 
@@ -80,6 +82,8 @@ class SeqAndSetTerm(terms: Seq[MultiTerm]) extends SeqSetTerm with AndSetTerm wi
     new SeqAndSetTerm(seq.map(_.pushInternalContext(context)))
   }
 
+  override def dropExternalContext(): AndSetTerm with NoExternalContext = this
+
 }
 
 class AndSetTermInExternalContext(term: AndSetTerm with NoExternalContext, externContext:MultiTerm)
@@ -112,5 +116,21 @@ class AndSetTermInExternalContext(term: AndSetTerm with NoExternalContext, exter
     }
   }
 
+  override def dropExternalContext(): AndSetTerm with NoExternalContext = term
+
 }
 
+object AndSetTermInExternalContext
+{
+
+  def apply(term: AndSetTerm with NoExternalContext, externContext: MultiTerm): AndSetTerm = {
+    if (externContext.isEmpty()) {
+      EmptyTerm
+    } else if (externContext.isStar()) {
+      term
+    } else {
+      new AndSetTermInExternalContext(term, externContext)
+    }
+  }
+
+}

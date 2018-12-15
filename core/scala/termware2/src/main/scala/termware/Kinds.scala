@@ -42,9 +42,14 @@ trait PrimitiveTermKind extends PointTermKind
 {
 
   override type In = PointTerm
-  override type Out = PrimitiveTerm[_]
+  override type Out = PrimitiveTerm[PrimitiveTerm[_]#Value]
 
-  def primitive(x:PointTerm): PrimitiveTerm[_]
+  type Primitive
+
+  def primitive(x:PointTerm): Out
+
+  def tprimitive[T](x:PointTerm): PrimitiveTerm[T] =
+    primitive(x).asInstanceOf[PrimitiveTerm[T]]
 
 }
 

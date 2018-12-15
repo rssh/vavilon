@@ -61,9 +61,37 @@ object TermInExternalContext
 {
 
   def apply(term: MultiTerm, externContext: MultiTerm): MultiTerm = {
-    term.kind match {
-      case k: EmptyTermKind => EmptyTerm
+    if (externContext.isEmpty()) {
+      EmptyTerm
+    } else if (externContext.isStar()) {
+      term
+    } else if (!term.externalContext().isStar()) {
+      TermInExternalContext(term.dropExternalContext(), term.externalContext() and externContext)
+    } else {
+      term.kind match {
+        case k: EmptyTermKind => EmptyTerm
+        case k: StarTermKind => ContextStarTerm(EmptyTerm,externContext)
+        case k: PointTermKind => PointTermInExternalContext.create(k, k.pointTerm(term), externContext)
+        case k: OrSetTermKind => val orSet = k.orSet(term)
+            OrSetInExternalContext(orSet.dropExternalContext(),orSet.externalContext() and externContext)
+        case k: AndSetTermKind => val andSet = k.andSet(term)
+            AndSetTermInExternalContext(andSet.dropExternalContext(), andSet.externalContext() and externContext)
+        case k: OrElseTermKind => val orElse = k.orElse(term)
+            OrElseTermInExternalContext(orElse.dropExternalContext(), orElse.externalContext() and externContext)
+      }
+    }
+  }
 
+}
+
+object PointTermInExternalContext
+{
+
+  def create(pk:PointTermKind,term: PointTerm, externalContext: MultiTerm): PointTerm = {
+    pk match {
+      case k: PrimitiveTermKind =>
+        val primitiveTerm = k.primitive(term)
+        new ContextfullPrimitiveTerm(primitiveTerm.base,primitiveTerm.context(),primitiveTerm.externalContext() and externalContext)
     }
   }
 

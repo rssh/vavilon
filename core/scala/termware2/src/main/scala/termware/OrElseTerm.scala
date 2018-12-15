@@ -42,6 +42,8 @@ trait OrElseTerm extends MultiTerm {
     }
   }
 
+  override def dropExternalContext(): OrElseTerm with NoExternalContext
+
 }
 
 // TODO: seq ?
@@ -85,9 +87,11 @@ class ContextlessOrElseTerm(frs:MultiTerm, snd: MultiTerm) extends OrElseTerm wi
     map(_.pushInternalContext(context))
   }
 
+  override def dropExternalContext(): OrElseTerm with NoExternalContext = this
+
 }
 
-class ContextfullOrElseTerm(t: ContextlessOrElseTerm, externContext:MultiTerm) extends TermInExternalContext(t,externContext) with OrElseTerm {
+class OrElseTermInExternalContext(t: OrElseTerm with NoExternalContext, externContext:MultiTerm) extends TermInExternalContext(t,externContext) with OrElseTerm {
 
   override def firstMapped[A](f: MultiTerm => A)(p: A => Boolean)(default: => A): A = {
     t.firstMapped(x => f(TermInExternalContext(x,externContext)))(p)(default)
@@ -97,9 +101,23 @@ class ContextfullOrElseTerm(t: ContextlessOrElseTerm, externContext:MultiTerm) e
     t.map(x => f(TermInExternalContext(x,externContext)))
   }
 
+  override def dropExternalContext(): OrElseTerm with NoExternalContext = t
 
 }
 
+object OrElseTermInExternalContext {
+
+  def apply(t: OrElseTerm with NoExternalContext, externContext: MultiTerm): MultiTerm = {
+    if (externContext.isEmpty()) {
+      EmptyTerm
+    } else if (externContext.isStar()) {
+      t
+    } else {
+      new OrElseTermInExternalContext(t, externContext)
+    }
+  }
+
+}
 
 object OrElseTerm
 {

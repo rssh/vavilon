@@ -3,7 +3,7 @@ package termware
 import termware.util.{FastRefOption, SetTerm}
 
 
-final object EmptyTerm extends MultiTerm with OrSetTerm with NoExternalContext
+final object EmptyTerm extends MultiTerm with OrSetTerm with AndSetTerm with NoExternalContext
 {
   override def kind: MultiTermKind = EmptyTermKind
 
@@ -30,6 +30,8 @@ final object EmptyTerm extends MultiTerm with OrSetTerm with NoExternalContext
 
   // adding context to empty term is useless.
   override def pushInternalContext(context: MultiTerm): MultiTerm = this
+
+  override def dropExternalContext(): EmptyTerm.type with NoExternalContext = this
 
 }
 

@@ -149,7 +149,7 @@ object IfTerm
           new PlainIfTerm(value,condition)
         case k: OrSetTermKind =>
           k.orSet(value).mapReduce(IfTerm(_,condition))(_ or _)(EmptyTerm)
-        case k: AndSetTermKind =>
+        case _: AndSetTermKind | _:PointTermKind | _:OrElseTermKind =>
           new PlainIfTerm(value,condition)
       }
     } else {
