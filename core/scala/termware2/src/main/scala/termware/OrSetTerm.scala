@@ -44,7 +44,7 @@ object OrSetTerm
 
   def _fromMap(map:Map[Name,MultiTerm]):OrSetTerm = {
     val seq = map.foldLeft(IndexedSeq[PointTerm]()){ case (s,(n,v)) =>
-      val a = ArrowTerm(n,v)
+      val a = PlainArrowTerm(n,v)
       s :+ a
     }
     new SeqOrSetTerm(seq)

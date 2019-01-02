@@ -79,8 +79,9 @@ trait StructuredTerm extends PointTerm  with ContextCarrierTerm {
     }
   }
 
-  def updated(name:AtomName, value: MultiTerm): MultiTerm
+  def updated(name:AtomName, value: MultiTerm): Self
 
+  override def dropExternalContext(): StructuredTerm with NoExternalContext
 
 
 }
@@ -99,7 +100,9 @@ object StructuredTerm extends StructuredTermKind
 case class PlainStructuredTerm(override val nameTerm: AtomTerm,
                                indexes:NameIndexed[MultiTerm]) extends StructuredTerm with PointTermNoExternalContext
 {
+
   override type Self = PlainStructuredTerm
+
 
   override def name: Name = nameTerm.name
 
@@ -122,7 +125,7 @@ case class PlainStructuredTerm(override val nameTerm: AtomTerm,
   override def newNamedSubterms(newIndexes: NameIndexed[MultiTerm]): Self =
     PlainStructuredTerm(nameTerm,newIndexes)
 
-  override def updated(name: AtomName, value: MultiTerm): MultiTerm = {
+  override def updated(name: AtomName, value: MultiTerm): PlainStructuredTerm = {
     // TODO:  check that value satisficy context.
     PlainStructuredTerm(name,indexes.updated(name,value))
   }
@@ -142,6 +145,65 @@ case class PlainStructuredTerm(override val nameTerm: AtomTerm,
             EmptyTerm
     }
 
+  }
+
+  override def dropExternalContext(): StructuredTerm with NoExternalContext = {
+    this
+  }
+
+}
+
+class StructuredTermInExternalContext(base: PlainStructuredTerm, externContext: MultiTerm)
+   extends TermInExternalContext(base,externContext) with StructuredTerm {
+
+  override type Self = StructuredTermInExternalContext
+
+
+  override def nameTerm: AtomTerm = base.nameTerm
+
+  override def get(name: AtomName): Option[MultiTerm] = base.get(name).map(TermInExternalContext(_,externContext))
+
+  override def get(i: Int): Option[MultiTerm] = base.get(i).map(TermInExternalContext(_,externContext))
+
+  override def names(): IndexedSeq[AtomName] = base.names()
+
+  override def indexedSubterms(): IndexedSeq[MultiTerm] = base.indexedSubterms().map(TermInExternalContext(_,externContext))
+
+  override def namedSubterms(): NameIndexed[MultiTerm] = base.namedSubterms().map(TermInExternalContext(_,externContext))
+
+  override def newNamedSubterms(newIndexes: NameIndexed[MultiTerm]): Self = {
+    new StructuredTermInExternalContext(base.newNamedSubterms(newIndexes), externContext)
+  }
+
+  override def mapSubterms(f: MultiTerm => MultiTerm): Self = {
+    new StructuredTermInExternalContext(base.mapSubterms(f),externContext)
+  }
+
+  override def updated(name: AtomName, value: MultiTerm): Self = {
+    new StructuredTermInExternalContext(base.updated(name,value),externContext)
+  }
+
+  override def dropExternalContext(): StructuredTerm with NoExternalContext = base
+
+  override def name: Name = base.name
+
+  override def arity: Int = base.arity
+}
+
+object StructuredTermInExternalContext
+{
+
+  def apply(base: StructuredTerm with NoExternalContext, externContext: MultiTerm): MultiTerm = {
+    if (externContext.isEmpty()) {
+      EmptyTerm
+    } else if (externContext.isStar()) {
+      base
+    } else if (base.isInstanceOf[PlainStructuredTerm]) {
+      new StructuredTermInExternalContext(base.asInstanceOf[PlainStructuredTerm], externContext)
+    } else {
+      val nBase = new PlainStructuredTerm(base.nameTerm, base.namedSubterms())
+      new StructuredTermInExternalContext(nBase, externContext)
+    }
   }
 
 }

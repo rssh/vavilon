@@ -94,7 +94,7 @@ class PrimitiveTermInInternalContextOnly[T](term: BasePrimitiveTerm[T], internCo
 
   override def context(): MultiTerm = internContext
 
-  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+  override def pushInternalContext(context: MultiTerm): PrimitiveTerm[T] = {
     if (context.isEmpty()) {
       this
     } else {
@@ -106,6 +106,21 @@ class PrimitiveTermInInternalContextOnly[T](term: BasePrimitiveTerm[T], internCo
 
   override def base: BasePrimitiveTerm[T] = term
 
+
+}
+
+object PrimitiveTermInInternalContextOnly
+{
+
+  def apply[T](term: PrimitiveTerm[T], internContext: MultiTerm): PrimitiveTerm[T] = {
+    if (internContext.isEmpty()) {
+      term
+    } else if (term.context().isEmpty()) {
+      new PrimitiveTermInInternalContextOnly(term.base, internContext)
+    } else {
+      new PrimitiveTermInInternalContextOnly(term.base, internContext orElse term.context())
+    }
+  }
 
 }
 
@@ -139,6 +154,24 @@ class ContextfullPrimitiveTerm[T](term: BasePrimitiveTerm[T], internContext: Mul
   override def ops = term.ops
 
   override def base = term
+
+}
+
+object ContextfullPrimitiveTerm {
+
+  def apply[T](term: BasePrimitiveTerm[T], internContext: MultiTerm, externContext: MultiTerm): MultiTerm = {
+    if (externContext.isEmpty()) {
+      EmptyTerm
+    } else if (externContext.isStar()) {
+      if (internContext.isEmpty()) {
+        term
+      } else {
+        PrimitiveTermInInternalContextOnly[T](term, internContext)
+      }
+    } else {
+      new ContextfullPrimitiveTerm(term, internContext, externContext)
+    }
+  }
 
 }
 
@@ -422,6 +455,8 @@ object BooleanTerm extends (Boolean => PrimitiveTerm[Boolean])
      }
   }
 
+  final val TRUE = BooleanTerm(true)
+  final val FALSE = BooleanTerm(false)
 
 }
 

@@ -19,7 +19,7 @@ trait IfTerm extends MultiTerm
 
 
   override def apply(argument: PointTerm): MultiTerm = {
-    val check = KernelLanguage.evalCheck(condition,value,EmptyTerm)
+    val check = KernelLanguage.evalCheck(condition,value)
     check match {
       case BooleanTerm(v) =>
         if (v) {
@@ -40,7 +40,8 @@ trait IfTerm extends MultiTerm
     */
   override def unify(x: MultiTerm): MultiTerm = {
     ifExternalContext(x.externalContext()){ joinContext =>
-      val check = KernelLanguage.evalCheck(condition,value,joinContext)
+      // TODO: mb use joinContext ?
+      val check = KernelLanguage.evalCheck(condition,value)
       check match {
         case BooleanTerm(v) =>
           if (v) {
@@ -55,6 +56,7 @@ trait IfTerm extends MultiTerm
     }
   }
 
+  override def dropExternalContext(): IfTerm with NoExternalContext
 
 
 }
@@ -82,12 +84,12 @@ case class PlainIfTerm(val value: MultiTerm, val condition:PointTerm) extends If
     */
   override def subst(context: MultiTerm): MultiTerm = {
     val resolved = value.subst(context)
-    val check = KernelLanguage.evalCheck(condition,value,context)
+    val check = KernelLanguage.evalCheck(condition,resolved)
     check match {
       case BooleanTerm(v) =>
         if (v) resolved else EmptyTerm
       case _ =>
-        IfTerm(value,check)
+        IfTerm(resolved,check)
     }
   }
 
@@ -114,6 +116,8 @@ case class PlainIfTerm(val value: MultiTerm, val condition:PointTerm) extends If
     new PlainIfTerm(value.pushInternalContext(context),condition)
   }
 
+  override def dropExternalContext(): PlainIfTerm = this
+
 }
 
 class IfTermInExternalContext(term: PlainIfTerm, externContext: MultiTerm)
@@ -125,12 +129,29 @@ class IfTermInExternalContext(term: PlainIfTerm, externContext: MultiTerm)
 
   override def condition: PointTerm = term.condition
 
-  override def pushInternalContext(context: MultiTerm): MultiTerm = {
+  override def pushInternalContext(context: MultiTerm): IfTerm = {
     new IfTermInExternalContext(term.pushInternalContext(context),externContext)
   }
 
   override def or(x: MultiTerm): MultiTerm = defaultOrInExternalContext(x)
 
+  override def dropExternalContext(): IfTerm with NoExternalContext = term
+
+}
+
+object IfTermInExternalContext
+{
+  def apply(term: IfTerm with NoExternalContext, externContext: MultiTerm): MultiTerm = {
+    if (externContext.isEmpty()) {
+      EmptyTerm
+    } else if (externContext.isStar()) {
+      term
+    } else if (term.isInstanceOf[PlainIfTerm]) {
+      new IfTermInExternalContext(term.asInstanceOf[PlainIfTerm], externContext)
+    } else {
+      new IfTermInExternalContext(PlainIfTerm(term.value,term.condition), externContext)
+    }
+  }
 }
 
 

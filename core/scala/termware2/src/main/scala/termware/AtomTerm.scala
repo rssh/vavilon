@@ -1,6 +1,5 @@
 package termware
 
-import termware.algo.ContextMerge
 import termware.util.FastRefOption
 
 trait AtomTerm extends PointTerm with ContextCarrierTerm
@@ -88,11 +87,15 @@ case class ContextfullAtomTerm(override val name: AtomName,
 object ContextfullAtomTerm
 {
 
-  def apply(name:AtomName, context:MultiTerm): AtomTerm = {
-    if (context.isEmpty()) {
-      name
+  def apply(name:AtomName, context:MultiTerm, externContext: MultiTerm): AtomTerm = {
+    if (externContext.isStar()) {
+      if (context.isEmpty()) {
+        name
+      } else {
+        new ContextfullAtomTerm(name, context)
+      }
     } else {
-      ContextfullAtomTerm(name,context)
+      new ContextfullAtomTerm(name,context,externContext)
     }
   }
 

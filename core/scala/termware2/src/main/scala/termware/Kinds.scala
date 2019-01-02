@@ -60,7 +60,9 @@ trait SingletonNameKind extends PointTermKind
   override type In = PointTerm
   override type Out = SingletonName
 
-  def singletonName(): SingletonName
+  def singleton(in: PointTerm):Out = cast(in)
+
+  def baseSingletonName(): BaseSingletonName
 
 }
 

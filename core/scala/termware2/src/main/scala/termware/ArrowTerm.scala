@@ -2,14 +2,23 @@ package termware
 
 import termware.util.FastRefOption
 
-
-case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm with PointTermNoExternalContext
+trait ArrowTerm extends PointTerm
 {
+
+  def left: MultiTerm
+
+  def right: MultiTerm
+
   override def name: Name = KernelNames.arrowName
 
   override def arity: Int = 2
 
-  override def kind: PointTermKind = ArrowTerm
+  override def kind: PointTermKind = ArrowTerm.Kind
+
+}
+
+case class PlainArrowTerm(left: MultiTerm, right: MultiTerm) extends ArrowTerm with PointTermNoExternalContext
+{
 
   override def apply(term: PointTerm): MultiTerm = {
     val u = left.unify(term)
@@ -53,7 +62,7 @@ case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm with P
   override def resolve(term: MultiTerm): MultiTerm = left.resolve(term)
 
   override def pushInternalContext(context: MultiTerm): MultiTerm = {
-    ArrowTerm(left.pushInternalContext(context),right)
+    PlainArrowTerm(left.pushInternalContext(context),right)
   }
 
   def map(f:MultiTerm=>MultiTerm):MultiTerm=
@@ -79,9 +88,18 @@ case class ArrowTerm(left: MultiTerm, right: MultiTerm) extends PointTerm with P
 
 
 
-object ArrowTerm extends ArrowTermKind {
-  override def arrow(x: PointTerm): ArrowTerm = x.asInstanceOf[ArrowTerm]
-  override def cast(x: PointTerm): ArrowTerm = x.asInstanceOf[ArrowTerm]
+object ArrowTerm  {
+
+  def apply(left: MultiTerm, right: MultiTerm): MultiTerm = {
+    // TODO: refine.
+    new PlainArrowTerm(left,right)
+  }
+
+  object Kind extends ArrowTermKind {
+    override def arrow(x: PointTerm): ArrowTerm = x.asInstanceOf[ArrowTerm]
+    override def cast(x: PointTerm): ArrowTerm = x.asInstanceOf[ArrowTerm]
+  }
+
 }
 
 object IsArrowTerm

@@ -87,7 +87,11 @@ case class ContextStarTerm(internalContext: MultiTerm, override val externalCont
 
   override def or(x: MultiTerm): MultiTerm = {
     if (externalContext.isStar() || this.externalContext == x.externalContext()) {
-        this  // TODO: clean internal context ???
+      if (internalContext.isEmpty())
+        StarTerm.U
+      else {
+        this
+      }
     } else if (x.externalContext.isStar()) {
         //  *(L), x(*)
         if (x.isStar()) {

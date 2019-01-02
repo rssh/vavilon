@@ -78,6 +78,8 @@ object TermInExternalContext
             AndSetTermInExternalContext(andSet.dropExternalContext(), andSet.externalContext() and externContext)
         case k: OrElseTermKind => val orElse = k.orElse(term)
             OrElseTermInExternalContext(orElse.dropExternalContext(), orElse.externalContext() and externContext)
+        case k: IfTermKind => val ifTerm = k.guarded(term)
+             IfTermInExternalContext(ifTerm.dropExternalContext(), ifTerm.externalContext() and externContext)
       }
     }
   }
@@ -87,11 +89,29 @@ object TermInExternalContext
 object PointTermInExternalContext
 {
 
-  def create(pk:PointTermKind,term: PointTerm, externalContext: MultiTerm): PointTerm = {
+  def create(pk:PointTermKind,term: PointTerm, externalContext: MultiTerm): MultiTerm = {
     pk match {
       case k: PrimitiveTermKind =>
         val primitiveTerm = k.primitive(term)
-        new ContextfullPrimitiveTerm(primitiveTerm.base,primitiveTerm.context(),primitiveTerm.externalContext() and externalContext)
+        ContextfullPrimitiveTerm(primitiveTerm.base,primitiveTerm.context(),primitiveTerm.externalContext() and externalContext)
+      case k: AtomTermKind =>
+        val atomTerm = k.atomTerm(term)
+        ContextfullAtomTerm(atomTerm.name,atomTerm.context(),atomTerm.externalContext() and externalContext)
+      case k: SingletonNameKind =>
+        val x = k.cast(term)
+        ContextfullSingletonName(x.baseSingletonName,x.context(),x.externalContext() and externalContext)
+      case k: ArrowTermKind =>
+        val arrowTerm = k.arrow(term)
+        val nLeft = TermInExternalContext(arrowTerm.left,externalContext)
+        if (nLeft.isEmpty()) {
+          EmptyTerm
+        } else {
+          ArrowTerm(nLeft, arrowTerm.right)
+        }
+      case k: StructuredTermKind =>
+        val structured = k.structured(term)
+        val nExternalContext = externalContext and structured.externalContext()
+        StructuredTermInExternalContext(structured.dropExternalContext(),nExternalContext)
     }
   }
 
@@ -160,9 +180,100 @@ object TermInContexts
     term.kind match {
       case k: EmptyTermKind => EmptyTerm
       case k: StarTermKind => ContextStarTerm(internContext, externContext )
+      case k: PointTermKind =>  PointTermInContext(k.pointTerm(term),internContext,externContext)
+      case _: OrSetTermKind | _: AndSetTermKind =>
+        val it = term.pushInternalContext(internContext)
+        TermInExternalContext(it.dropExternalContext(),term.externalContext() and externContext)
+      case k: OrElseTermKind =>
+        val orElse = k.orElse(term)
+        OrElseTermInExternalContext(orElse.dropExternalContext(),orElse.externalContext() and externContext).pushInternalContext(internContext)
+      case k: IfTermKind =>
+        val ifTerm = k.guarded(term)
+        IfTermInExternalContext(ifTerm.dropExternalContext(),ifTerm.externalContext() and externContext).pushInternalContext(internContext)
     }
   }
 
 }
 
 
+object PointTermInContext
+{
+
+  def apply(term: PointTerm, internContext: MultiTerm, externContext: MultiTerm): MultiTerm = {
+    term.kind match {
+      case k: PrimitiveTermKind =>
+         if (externContext.isStar()) {
+           if (internContext.isEmpty()) {
+             term
+           } else {
+             PrimitiveTermInInternalContextOnly(k.primitive(term),internContext)
+           }
+         } else {
+           val pt = k.primitive(term)
+           if (pt.isInstanceOf[BasePrimitiveTerm[_]]) {
+             ContextfullPrimitiveTerm(pt.asInstanceOf[BasePrimitiveTerm[_]],internContext,externContext)
+           } else {
+             val bpt = pt.base
+             ContextfullPrimitiveTerm(bpt, pt.context() and internContext, pt.externalContext and externContext)
+           }
+         }
+      case k: ArrowTermKind =>
+        if (externContext.isStar()) {
+          //TODO: recheck: term.pushInternalContext(internContext), because it can use constructors for here.
+          term.pushInternalContext(internContext)
+        } else {
+          val arrowTerm = k.arrow(term)
+          val nLeft = TermInContexts(arrowTerm.left, internContext, externContext)
+          if (nLeft.isEmpty()) {
+            EmptyTerm
+          } else {
+            ArrowTerm(nLeft,arrowTerm.right)
+          }
+        }
+      case k: AtomTermKind =>
+        if (externContext.isStar()) {
+          if (internContext.isEmpty()) {
+            term
+          } else {
+            // TODO: recheck
+            term.pushInternalContext(internContext)
+          }
+        } else {
+          val atomTerm = k.atomTerm(term)
+          val joinContext = atomTerm.externalContext() and externContext
+          if (joinContext.isEmpty()) {
+            EmptyTerm
+          } else {
+            ContextfullAtomTerm(atomTerm.name,atomTerm.context() and internContext, joinContext)
+          }
+        }
+      case k: SingletonNameKind =>
+        val singletonName = k.singleton(term)
+        ContextfullSingletonName(singletonName.baseSingletonName(),singletonName.context() and internContext,singletonName.externalContext() and externContext)
+      case k: StructuredTermKind =>
+        val structuredTerm = k.structured(term)
+        if (externContext.isStar()) {
+          structuredTerm.pushInternalContext(internContext)
+        } else {
+          val joinContext = structuredTerm.externalContext() and externContext
+          if (joinContext.isEmpty()) {
+            EmptyTerm
+          } else {
+            if (structuredTerm.isInstanceOf[PlainStructuredTerm]) {
+              val nb = structuredTerm.asInstanceOf[PlainStructuredTerm]
+              new StructuredTermInExternalContext(nb,joinContext).pushInternalContext(internContext)
+            } else {
+              // TODO: make StructurdTermInExternalContext use StructuredTerm with NoExternalContext without any
+              val plain = PlainStructuredTerm(structuredTerm.nameTerm,structuredTerm.namedSubterms())
+              new StructuredTermInExternalContext(plain,joinContext).pushInternalContext(internContext or structuredTerm.context())
+            }
+          }
+
+        }
+
+
+    }
+  }
+
+
+}

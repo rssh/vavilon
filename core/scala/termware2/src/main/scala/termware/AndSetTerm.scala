@@ -74,9 +74,21 @@ class SeqAndSetTerm(terms: Seq[MultiTerm]) extends SeqSetTerm with AndSetTerm wi
     *
     * @return
     */
-  override def unify(arg: MultiTerm): MultiTerm = ???
+  override def unify(arg: MultiTerm): MultiTerm = {
+    mapReduce(_.unify(arg))( _ and _ )(StarTerm.U)
+  }
 
-  override def or(x: MultiTerm): MultiTerm = ???
+  override def or(x: MultiTerm): MultiTerm = {
+    // TODO: think about tagged unify ?
+    val u = (this unify x)
+    if (u.isEmpty()) {
+      OrSetTerm._fromSeq(Seq(this,x))
+    } else if (u.externalContext().isStar()) {
+      u
+    } else {
+      OrSetTerm._fromSeq(Seq(this,x))
+    }
+  }
 
   override def pushInternalContext(context: MultiTerm): MultiTerm = {
     new SeqAndSetTerm(seq.map(_.pushInternalContext(context)))

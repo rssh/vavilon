@@ -25,7 +25,7 @@ trait ContextCarrierTerm extends PointTerm {
     case x: IfTermKind =>
       val ifx = x.guarded(term)
       // TODO: mb resolve ifx condition, think
-      val check = KernelLanguage.evalCheck(ifx.condition,ifx.value,externalContext())
+      val check = KernelLanguage.evalCheck(ifx.condition,ifx.value)
       check match {
         case BooleanTerm(v) => if (v) resolve(ifx.value) else EmptyTerm
         case _ => IfTerm(resolve(ifx.value),check)

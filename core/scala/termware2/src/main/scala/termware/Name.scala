@@ -58,11 +58,18 @@ trait PrimitiveName[T] extends Name
 
 }
 
+trait SingletonName extends Name
+{
+
+  def baseSingletonName(): BaseSingletonName
+
+}
+
 /**
   * Singleton name, each name have unique type-index. (example: Universum)
   * @param typeIndex
   */
-abstract class SingletonName(override val typeIndex: Int) extends Name with SingletonNameKind with PointTermNoExternalContext
+abstract class BaseSingletonName(override val typeIndex: Int) extends SingletonName with SingletonNameKind with PointTermNoExternalContext
 {
   override final type Carrier = Unit
 
@@ -72,7 +79,7 @@ abstract class SingletonName(override val typeIndex: Int) extends Name with Sing
 
   override final def compareSameTypeIndex(that: Name): Int = 0
 
-  override final def singletonName: SingletonName = this
+  override final def baseSingletonName: BaseSingletonName = this
 
   override final def pointUnify(pk: PointTermKind, term: PointTerm): MultiTerm = {
     term.kind match {
@@ -106,17 +113,17 @@ abstract class SingletonName(override val typeIndex: Int) extends Name with Sing
 
 }
 
-class ContextfullSingletonName(term: SingletonName, internContext: MultiTerm, externContext:MultiTerm) extends TermInContexts(term,internContext,externContext) with Name with SingletonNameKind
+class ContextfullSingletonName(term: BaseSingletonName, internContext: MultiTerm, externContext:MultiTerm) extends TermInContexts(term,internContext,externContext) with Name with SingletonNameKind
 {
   override type Carrier = Unit
 
-  override def typeIndex: Int = singletonName.typeIndex
+  override def typeIndex: Int = baseSingletonName.typeIndex
 
   override def compareSameTypeIndex(that: Name): Int = 0
 
   override def carrier: Carrier = term.carrier
 
-  override def singletonName(): SingletonName = term
+  override def baseSingletonName(): BaseSingletonName = term
 
   override def kind: PointTermKind = term.kind
 
@@ -136,7 +143,27 @@ class ContextfullSingletonName(term: SingletonName, internContext: MultiTerm, ex
 
 }
 
-class SingletonNameInInternalContext(term: SingletonName, internContext: MultiTerm) extends Name with SingletonNameKind  with PointTermNoExternalContext {
+object ContextfullSingletonName
+{
+
+  def apply(term: BaseSingletonName, internContext: MultiTerm, externContext: MultiTerm): MultiTerm = {
+    if (externContext.isEmpty()) {
+      EmptyTerm
+    } else if (externContext.isStar()) {
+      if (internContext.isEmpty()) {
+        term
+      } else {
+        new SingletonNameInInternalContext(term,internContext)
+      }
+    } else {
+      new ContextfullSingletonName(term, internContext, externContext)
+    }
+  }
+
+}
+
+
+class SingletonNameInInternalContext(term: BaseSingletonName, internContext: MultiTerm) extends Name with SingletonNameKind  with PointTermNoExternalContext {
 
   override type Carrier = Unit
 
@@ -146,7 +173,7 @@ class SingletonNameInInternalContext(term: SingletonName, internContext: MultiTe
 
   override def carrier: Carrier = ()
 
-  override def singletonName(): SingletonName = term
+  override def baseSingletonName(): BaseSingletonName = term
 
   override def context(): MultiTerm = internContext
 
@@ -192,15 +219,15 @@ object AtomName extends AtomTermKind
 
 }
 
-final object SeqName extends SingletonName(TypeIndexes.SEQ)
-final object SetName extends SingletonName(TypeIndexes.SET)
-final object StarName extends SingletonName(TypeIndexes.STAR)
-final object UnitName extends SingletonName(TypeIndexes.UNIT)
-final object ContradictionName extends SingletonName(TypeIndexes.ERROR)
-final object OrElseName extends SingletonName(TypeIndexes.OR_ELSE)
-final object ArrowName extends SingletonName(TypeIndexes.ARROW)
-final object EmptyName extends SingletonName(TypeIndexes.ARROW)
-final object IfName extends SingletonName(TypeIndexes.IF)
+final object SeqName extends BaseSingletonName(TypeIndexes.SEQ)
+final object SetName extends BaseSingletonName(TypeIndexes.SET)
+final object StarName extends BaseSingletonName(TypeIndexes.STAR)
+final object UnitName extends BaseSingletonName(TypeIndexes.UNIT)
+final object ContradictionName extends BaseSingletonName(TypeIndexes.ERROR)
+final object OrElseName extends BaseSingletonName(TypeIndexes.OR_ELSE)
+final object ArrowName extends BaseSingletonName(TypeIndexes.ARROW)
+final object EmptyName extends BaseSingletonName(TypeIndexes.ARROW)
+final object IfName extends BaseSingletonName(TypeIndexes.IF)
 
 
 object TypeIndexes

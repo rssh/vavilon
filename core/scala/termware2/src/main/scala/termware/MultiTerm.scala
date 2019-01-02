@@ -82,6 +82,12 @@ trait MultiTerm
     IfTerm(this,x)
   }
 
+  def arrow(right: MultiTerm): MultiTerm =
+    ArrowTerm(this,right)
+
+  final def --> (right: MultiTerm): MultiTerm =
+    arrow(right)
+
   def substExternalContext(): MultiTerm = {
     subst(externalContext).dropExternalContext
   }
@@ -98,12 +104,19 @@ trait MultiTerm
     */
   def setExternalContext(context: MultiTerm): MultiTerm
 
+  def -:(context: MultiTerm): MultiTerm =
+    setExternalContext(context)
+
+  def :- (arg: MultiTerm): MultiTerm =
+    arg.setExternalContext(this)
+
   def addExternalContext(context: MultiTerm): MultiTerm = {
     setExternalContext(externalContext() and context)
   }
 
   def pushInternalContext(context: MultiTerm): MultiTerm
 
+  final def ^ (context: MultiTerm) = pushInternalContext(context)
 
   /**
     * Check, if other external context

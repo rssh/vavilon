@@ -1,7 +1,7 @@
 
 lazy val commonSettings = Seq(
   organization := "com.github.rssh",
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.8",
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Ypartial-unification"),
   libraryDependencies ++= Seq(
     scalaVersion("org.scala-lang" % "scala-reflect" % _).value,
