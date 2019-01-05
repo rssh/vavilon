@@ -1,5 +1,0 @@
-package termware
-
-class BaseMultiTermPropertySpec {
-
-}
