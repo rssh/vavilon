@@ -11,6 +11,10 @@ class KindCheckSpec extends FunSpec {
       case pk:PointTermKind => "P" + ptKindAnalysis(pk.pointTerm(x))
       case ek:EmptyTermKind => "E"
       case sk:StarTermKind => "*"
+      case ok:OrSetTermKind => "O"
+      case ak:AndSetTermKind => "A"
+      case mk:OrElseTermKind => "|"
+      case gk:IfTermKind => "?"
     }
   }
 

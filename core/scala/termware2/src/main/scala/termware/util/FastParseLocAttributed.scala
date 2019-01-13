@@ -1,8 +1,6 @@
 package termware.util
 
-import fastparse.all._
-import fastparse.core
-import fastparse.core.{Mutable, ParseCtx, Parser}
+import fastparse._
 
 object FastParseLocAttributed {
 
@@ -24,12 +22,13 @@ object FastParseLocAttributed {
     def map[S](f:T=>S):InSource[S] = InSource(f(value),location)
   }
 
-  val laStart: Parser[InSource[Unit],Char,String] = fastparse.parsers.Terminals.PassWith(
-    InSource[Unit]((),InSourceLocation.ZERO))
+
+  //val laStart: Parser[InSource[Unit],Char,String] = fastparse.parsers.Terminals.PassWith(
+  //  InSource[Unit]((),InSourceLocation.ZERO))
 
 
 
-
+/*
   def laCharPred(predicate:Char=>Boolean):Parser[InSource[Char],Char,String]=new Parser[InSource[Char],Char,String]() {
     override def parseRec(cfg: ParseCtx[Char, String], index: Int): core.Mutable[InSource[Char], Char, String] = {
       if (! cfg.input.isReachable(index)) fail(cfg.failure,index)
@@ -180,5 +179,6 @@ object FastParseLocAttributed {
 
 
   }
+  */
 
 }
