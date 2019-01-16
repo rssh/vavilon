@@ -52,9 +52,9 @@ class ContextlessOrElseTerm(frs:MultiTerm, snd: MultiTerm) extends OrElseTerm wi
 
   override def resolve(term: MultiTerm): MultiTerm = map(_.resolve(term))
 
-  override def apply(term: PointTerm): MultiTerm = {
-    frs.apply(term) match {
-      case EmptyTerm => snd.apply(term)
+  override def termApply(term: PointTerm): MultiTerm = {
+    frs.termApply(term) match {
+      case EmptyTerm => snd.termApply(term)
       case other => other
     }
   }

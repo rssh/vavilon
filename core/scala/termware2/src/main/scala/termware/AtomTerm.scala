@@ -1,6 +1,6 @@
 package termware
 
-import termware.util.FastRefOption
+import termware.util.{FastRefOption, NameIndexed}
 
 trait AtomTerm extends PointTerm with ContextCarrierTerm
 {
@@ -29,6 +29,11 @@ trait AtomTerm extends PointTerm with ContextCarrierTerm
   override def subst(context: MultiTerm): MultiTerm = {
     val to = context.resolve(this)
     if (to.isEmpty()) this else to
+  }
+
+  // DSL
+  def apply(values: (AtomName,MultiTerm)* ): StructuredTerm = {
+    StructuredTerm.create(name, NameIndexed.fromSeq(values))
   }
 
 

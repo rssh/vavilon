@@ -3,7 +3,6 @@ package termware.ufastparse
 import fastparse._
 import fastparse.NoWhitespace._
 import termware._
-import termware.util.FastParseLocAttributed._
 import termware.util.NameIndexed
 
 object TermwareParser {
@@ -86,5 +85,7 @@ object TermwareParser {
   def multiTerm[_:P]: P[MultiTerm] = pointTerm
 
   def expression[_:P] = Start ~ multiTerm
+
+
 
 }

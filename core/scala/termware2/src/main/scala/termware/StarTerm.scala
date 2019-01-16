@@ -23,7 +23,7 @@ object ContextLessStarTerm extends StarTerm with NoExternalContext
 
   override def resolve(term: MultiTerm): MultiTerm = term
 
-  override def apply(term: PointTerm): MultiTerm = EmptyTerm
+  override def termApply(term: PointTerm): MultiTerm = EmptyTerm
 
   override def unify(arg: MultiTerm): MultiTerm = arg
 
@@ -68,7 +68,7 @@ case class ContextStarTerm(internalContext: MultiTerm, override val externalCont
 
   override def context: MultiTerm = internalContext
 
-  override def apply(term: PointTerm): MultiTerm =
+  override def termApply(term: PointTerm): MultiTerm =
                                 context.resolve(term)
 
   override def resolve(term: MultiTerm): MultiTerm =

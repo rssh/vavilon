@@ -16,7 +16,7 @@ class SeqAndSetTerm(terms: Seq[MultiTerm]) extends SeqSetTerm with AndSetTerm wi
     * @param term
     * @return
     */
-  override def apply(term: PointTerm): MultiTerm = {
+  override def termApply(term: PointTerm): MultiTerm = {
     var r: MultiTerm = EmptyTerm
     // TODO: while find, applyAll ?
     seq.find{ t =>

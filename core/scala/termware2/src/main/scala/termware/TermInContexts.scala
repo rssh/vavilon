@@ -13,8 +13,8 @@ abstract class TermInInternalContextOnly(term: NoExternalContext, val internCont
 abstract class TermInExternalContext(term: NoExternalContext, externContext: MultiTerm) extends MultiTerm
 {
 
-  override def apply(term: PointTerm): MultiTerm = {
-     this.term.apply(term)
+  override def termApply(term: PointTerm): MultiTerm = {
+     this.term.termApply(term)
   }
 
   override def and(x: MultiTerm): MultiTerm = {
@@ -75,7 +75,7 @@ object TermInExternalContext
         case k: OrSetTermKind => val orSet = k.orSet(term)
             OrSetInExternalContext(orSet.dropExternalContext(),orSet.externalContext() and externContext)
         case k: AndSetTermKind => val andSet = k.andSet(term)
-            AndSetTermInExternalContext(andSet.dropExternalContext(), andSet.externalContext() and externContext)
+            impl.AndSetTermInExternalContext(andSet.dropExternalContext(), andSet.externalContext() and externContext)
         case k: OrElseTermKind => val orElse = k.orElse(term)
             OrElseTermInExternalContext(orElse.dropExternalContext(), orElse.externalContext() and externContext)
         case k: IfTermKind => val ifTerm = k.guarded(term)

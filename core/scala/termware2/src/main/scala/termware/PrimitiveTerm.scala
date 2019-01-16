@@ -22,7 +22,7 @@ trait PrimitiveTerm[T] extends PointTerm with PrimitiveName[T]
   override def arity: Int = 0
 
   override def subst(context: MultiTerm): MultiTerm = {
-     context.apply(this)
+     context.termApply(this)
   }
 
   override def pointUnify(ptk: PointTermKind, term: PointTerm): MultiTerm = {

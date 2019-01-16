@@ -12,8 +12,6 @@ import termware.util.{FastRefOption, SeqSetTerm, SetTerm}
 trait OrSetTerm extends SetTerm {
 
 
-  def apply(term: PointTerm): MultiTerm
-
   override def subst(context: MultiTerm): MultiTerm = {
     mapReduce(_.subst(context))(_ or _)(EmptyTerm)
   }
@@ -44,7 +42,7 @@ object OrSetTerm
 
   def _fromMap(map:Map[Name,MultiTerm]):OrSetTerm = {
     val seq = map.foldLeft(IndexedSeq[PointTerm]()){ case (s,(n,v)) =>
-      val a = PlainArrowTerm(n,v)
+      val a = impl.PlainArrowTerm(n,v)
       s :+ a
     }
     new SeqOrSetTerm(seq)
@@ -64,7 +62,7 @@ class SeqOrSetTerm(inSeq: Seq[MultiTerm]) extends OrSetTerm with SeqSetTerm with
 
   val seq = inSeq.toIndexedSeq
 
-  override def apply(term: PointTerm): MultiTerm = {
+  override def termApply(term: PointTerm): MultiTerm = {
     val s0: MultiTerm = EmptyTerm
     seq.foldLeft(s0) { (s, t) =>
       t match {

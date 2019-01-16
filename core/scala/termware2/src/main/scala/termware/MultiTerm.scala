@@ -29,7 +29,7 @@ trait MultiTerm
     * @param term
     * @return
     */
-  def apply(term:PointTerm): MultiTerm
+  def termApply(term:PointTerm): MultiTerm
 
 
   /**

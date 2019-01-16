@@ -11,7 +11,7 @@ trait ContextCarrierTerm extends PointTerm {
 
   override def resolve(term: MultiTerm): MultiTerm =
   term.kind match {
-    case x: PointTermKind => context.apply(x.pointTerm(term))
+    case x: PointTermKind => context.termApply(x.pointTerm(term))
     case x: EmptyTermKind => EmptyTerm
 
       // TODO:  select or from all contexts ?

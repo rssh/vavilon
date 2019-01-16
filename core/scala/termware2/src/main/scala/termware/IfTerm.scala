@@ -18,12 +18,12 @@ trait IfTerm extends MultiTerm
   override def kind: MultiTermKind = IfTermKind
 
 
-  override def apply(argument: PointTerm): MultiTerm = {
+  override def termApply(argument: PointTerm): MultiTerm = {
     val check = KernelLanguage.evalCheck(condition,value)
     check match {
       case BooleanTerm(v) =>
         if (v) {
-          value.apply(argument)
+          value.termApply(argument)
         } else {
           EmptyTerm
         }

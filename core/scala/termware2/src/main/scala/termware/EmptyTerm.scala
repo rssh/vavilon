@@ -12,7 +12,7 @@ final object EmptyTerm extends MultiTerm with OrSetTerm with AndSetTerm with NoE
   override def resolve(term:MultiTerm): MultiTerm = EmptyTerm
 
   //TODO: rethink
-  override def apply(term: PointTerm): MultiTerm = EmptyTerm
+  override def termApply(term: PointTerm): MultiTerm = EmptyTerm
 
   def context(): MultiTerm = this
 

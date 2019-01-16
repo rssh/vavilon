@@ -4,9 +4,8 @@ import termware._
 
 object KernelContext {
 
+   import termware.DSL._
    import termware.KernelLanguage._
-
-
 
 
    def applyCheck(t:MultiTerm):MultiTerm = {

@@ -7,6 +7,8 @@ import termware.util.NameIndexed
 
 object KernelLanguage {
 
+  import DSL._
+
 
   def evalCheck(check: PointTerm, x: MultiTerm /*, context: MultiTerm*/): PointTerm = {
     // kernel-langiage is a super-simple wher we can have:
@@ -61,18 +63,6 @@ object KernelLanguage {
       AtomName("y") -> y
     )))
   }
-
-  def atom(s:String) = AtomTerm(s)
-
-  implicit def symbolToAtom(symbol:Symbol): AtomTerm = AtomTerm(symbol.name)
-
-  @inline final def star = StarTerm.U
-  @inline final def STAR = StarTerm.U
-
-  type BooleanTerm = PrimitiveTerm[Boolean]
-
-  implicit def booleanToBooleanTerm(value: Boolean): BooleanTerm = BooleanTerm(value)
-
 
 
 }

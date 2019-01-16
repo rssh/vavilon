@@ -10,7 +10,7 @@ trait PointTerm extends MultiTerm {
 
   override def kind: PointTermKind
 
-  override def apply(term: PointTerm): MultiTerm = EmptyTerm
+  override def termApply(term: PointTerm): MultiTerm = EmptyTerm
 
   override def unify(x: MultiTerm): MultiTerm = {
     val joinContext = x.externalContext() and externalContext()
