@@ -11,6 +11,7 @@ sealed trait MultiTermKind
   def cast(x:In):Out =
     x.asInstanceOf[Out]
 
+
 }
 
 sealed trait NonContradictionTermKind extends MultiTermKind
@@ -24,6 +25,16 @@ sealed trait PointTermKind extends NonContradictionTermKind
   def pointTerm(x:MultiTerm): PointTerm = {
     x.asInstanceOf[PointTerm]
   }
+
+  @inline
+  def checkPointTerm(x:MultiTerm): FastRefOption[PointTerm] = {
+    if (x.isInstanceOf[PointTerm]) {
+      FastRefOption(x.asInstanceOf[PointTerm])
+    } else {
+      FastRefOption.empty
+    }
+  }
+
 
 }
 

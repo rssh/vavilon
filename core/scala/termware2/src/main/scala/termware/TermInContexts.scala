@@ -1,7 +1,7 @@
 package termware
 
 
-abstract class TermInInternalContextOnly(term: NoExternalContext, val internContext: MultiTerm) extends MultiTerm with NoExternalContext
+abstract class TermInInternalContextOnly(term: NoExternalContext, val internContext: MultiTerm) extends MultiTerm with NoExternalContext // TODO: with ContextCarrierTerm
 {
 
 

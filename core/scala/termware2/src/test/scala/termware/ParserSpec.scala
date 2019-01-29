@@ -1,14 +1,14 @@
 package termware
 
 import org.scalatest.FunSpec
-import termware.ufastparse.TermwareParser
+import termware.ufastparse.TermwareCombinators
 
 class ParserSpec extends FunSpec {
 
   it("parse long primitives") {
     import fastparse._
     import fastparse.NoWhitespace._
-    val p1 = parse("1223",ufastparse.TermwareParser.primitiveTerm(_))
+    val p1 = parse("1223",ufastparse.TermwareCombinators.primitiveTerm(_))
     assert(p1.isSuccess)
     p1 match {
       case Parsed.Success(t,index) =>

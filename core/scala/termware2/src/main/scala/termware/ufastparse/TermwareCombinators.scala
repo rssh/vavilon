@@ -5,7 +5,7 @@ import fastparse.NoWhitespace._
 import termware._
 import termware.util.NameIndexed
 
-object TermwareParser {
+object TermwareCombinators {
 
 
   def snumber[_:P] : P[String] = P( CharsWhileIn("0-9").! )

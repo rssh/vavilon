@@ -44,7 +44,7 @@ trait PrimitiveName[T] extends Name
 
   def value: T
 
-  def ops: PrimitiveTermOps[_,T]
+  def ops: PrimitiveTermOps[T]
 
   override type Carrier = T
 

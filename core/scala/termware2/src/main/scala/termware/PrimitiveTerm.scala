@@ -194,7 +194,7 @@ abstract class BasePrimitiveTermImpl[S<:BasePrimitiveTermImpl[S,T],T](val value:
 
   type Self = BasePrimitiveTermImpl[S,T]
 
-  def ops: PrimitiveTermOps[S,T]
+  def ops: PrimitiveTermOps[T]
 
   def primitiveTypeIndex: Int = ops.primitiveTypeIndex
 
@@ -207,7 +207,7 @@ abstract class BasePrimitiveTermImpl[S<:BasePrimitiveTermImpl[S,T],T](val value:
 }
 
 
-abstract class PrimitiveTermOps[S<:BasePrimitiveTermImpl[S,T],T]
+abstract class PrimitiveTermOps[T]
 {
 
   final type Primitive = T
@@ -225,11 +225,11 @@ abstract class PrimitiveTermOps[S<:BasePrimitiveTermImpl[S,T],T]
 case class ByteTermBase(v:Byte) extends BasePrimitiveTermImpl[ByteTermBase,Byte](v)
 {
 
-  override val ops: PrimitiveTermOps[ByteTermBase,Byte] = ByteTermOps
+  override val ops: PrimitiveTermOps[Byte] = ByteTermOps
 
 }
 
-object ByteTermOps extends PrimitiveTermOps[ByteTermBase,Byte]
+object ByteTermOps extends PrimitiveTermOps[Byte]
 {
 
   override final val primitiveTypeIndex: Int = 1
@@ -245,7 +245,7 @@ case class ShortTermBase(v:Short) extends BasePrimitiveTermImpl[ShortTermBase,Sh
   def ops = ShortTermOps
 }
 
-object ShortTermOps extends PrimitiveTermOps[ShortTermBase,Short]
+object ShortTermOps extends PrimitiveTermOps[Short]
 {
   override final val primitiveTypeIndex: Int = 2
 
@@ -260,7 +260,7 @@ case class IntTermBase(v:Int) extends BasePrimitiveTermImpl[IntTermBase,Int](v)
   def ops = IntTermOps
 }
 
-object IntTermOps extends PrimitiveTermOps[IntTermBase,Int]
+object IntTermOps extends PrimitiveTermOps[Int]
 {
   override final val primitiveTypeIndex: Int = 3
 
@@ -281,7 +281,7 @@ object IntTerm extends (Int => BasePrimitiveTerm[Int])
 }
 
 
-object LongTermOps extends PrimitiveTermOps[LongTermBase,Long]
+object LongTermOps extends PrimitiveTermOps[Long]
 {
   override final val primitiveTypeIndex: Int = 4
 
@@ -301,8 +301,12 @@ case class DoubleTermBase(v:Double) extends BasePrimitiveTermImpl[DoubleTermBase
   def ops = DoubleTermOps
 }
 
+object DoubleTermBase
+{
+  implicit def ops = DoubleTermOps
+}
 
-object DoubleTermOps extends PrimitiveTermOps[DoubleTermBase,Double]
+object DoubleTermOps extends PrimitiveTermOps[Double]
 {
   override val primitiveTypeIndex: Int = 8
 
@@ -323,7 +327,7 @@ case class BigDecimalTermBase(v:BigDecimal) extends BasePrimitiveTermImpl[BigDec
   def ops = BigDecimalTermOps
 }
 
-object BigDecimalTermOps extends PrimitiveTermOps[BigDecimalTermBase,BigDecimal]
+object BigDecimalTermOps extends PrimitiveTermOps[BigDecimal]
 {
   override val primitiveTypeIndex: Int = 9
 
@@ -350,7 +354,7 @@ case class CharTermBase(v:Char) extends BasePrimitiveTermImpl[CharTermBase,Char]
 }
 
 
-object CharTermOps extends PrimitiveTermOps[CharTermBase,Char]
+object CharTermOps extends PrimitiveTermOps[Char]
 {
   override final val primitiveTypeIndex: Int = 17
 
@@ -363,6 +367,9 @@ object CharTerm extends (Char => PrimitiveTerm[Char])
 {
   @inline
   override def apply(v: Char): BasePrimitiveTerm[Char] = CharTermBase(v)
+
+  implicit def ops: PrimitiveTermOps[Char] = CharTermOps
+
 }
 
 
@@ -372,7 +379,7 @@ case class StringTermBase(v:String) extends BasePrimitiveTermImpl[StringTermBase
 }
 
 
-object StringTermOps extends PrimitiveTermOps[StringTermBase,String]
+object StringTermOps extends PrimitiveTermOps[String]
 {
   override final val primitiveTypeIndex: Int = 18
 
@@ -384,6 +391,7 @@ object StringTermOps extends PrimitiveTermOps[StringTermBase,String]
 object StringTerm extends (String => BasePrimitiveTerm[String])
 {
   override def apply(v: String): BasePrimitiveTerm[String] = StringTermBase(v)
+
 }
 
 
@@ -393,7 +401,7 @@ case class OpaqueTermBase(v:Array[Byte]) extends BasePrimitiveTermImpl[OpaqueTer
 }
 
 
-object OpaqueTermOps extends PrimitiveTermOps[OpaqueTermBase,Array[Byte]]
+object OpaqueTermOps extends PrimitiveTermOps[Array[Byte]]
 {
 
   override final val primitiveTypeIndex: Int = 19
@@ -428,7 +436,7 @@ case class BooleanTermBase(v:Boolean) extends BasePrimitiveTermImpl[BooleanTermB
 
 }
 
-object BooleanTermOps extends PrimitiveTermOps[BooleanTermBase,Boolean]
+object BooleanTermOps extends PrimitiveTermOps[Boolean]
 {
   override val primitiveTypeIndex: Int = 20
 
