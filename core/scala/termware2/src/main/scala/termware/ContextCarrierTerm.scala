@@ -4,7 +4,9 @@ package termware
 /**
   * Term which carry internal context.
   */
-trait ContextCarrierTerm extends PointTerm {
+trait ContextCarrierTerm extends PointTermOps {
+
+  this: PointTerm =>
 
   def context(): MultiTerm
 

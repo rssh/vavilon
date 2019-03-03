@@ -1,12 +1,14 @@
 package termware
 
-import termware.util.{FastRefOption, SeqSetTerm, SetTerm}
+import termware.util.{SetTermOps}
 
 /**
   * This is one non-contradiction term.
   * EmptyCoset is star.
   */
-trait AndSetTerm extends SetTerm {
+trait AndSetTermOps extends SetTermOps {
+
+  this: AndSetTerm =>
 
   override def kind: MultiTermKind = AndSetTerm.Kind
 
@@ -14,15 +16,13 @@ trait AndSetTerm extends SetTerm {
 
 }
 
-
-
-object AndSetTerm  {
+object AndSetTermOps  {
 
   def createPoints(subterms:PointTerm*): MultiTerm =
     new impl.SeqAndSetTerm(subterms)
 
-  object Kind extends AndSetTermKind
-
-
 }
+
+
+
 

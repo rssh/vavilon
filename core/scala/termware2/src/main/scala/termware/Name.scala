@@ -1,8 +1,10 @@
 package termware
 
 
-sealed trait Name extends Ordered[Name] with PointTerm with ContextCarrierTerm
+trait NameOps extends PointTermOps with ContextCarrierTerm
 {
+
+  this: Name =>
 
   type Carrier
 
@@ -18,17 +20,23 @@ sealed trait Name extends Ordered[Name] with PointTerm with ContextCarrierTerm
 
   def carrier: Carrier
 
-  override def name = this
+  //override def name: this.type  = this
 
   override def arity = 0
+
+  @inline final def toTerm(): PointTerm = this
 
 }
 
 
-abstract class StringLikeName(val value:String) extends Name
+trait StringLikeName extends NameOps
 {
 
+   this: Name =>
+
    type Carrier = String
+
+   def value: String
 
    override def carrier: String = value
 
@@ -39,8 +47,10 @@ abstract class StringLikeName(val value:String) extends Name
 
 
 @specialized(Byte,Int,Long,Double,Char)
-trait PrimitiveName[T] extends Name
+trait PrimitiveNameOps[T] extends NameOps
 {
+
+  this: PrimitiveName[T] =>
 
   def value: T
 
@@ -55,22 +65,25 @@ trait PrimitiveName[T] extends Name
   def compareSameTypeIndex(that: Name) =
     ops.ordering.compare(value, that.asInstanceOf[PrimitiveName[T]].value)
 
-
 }
 
-trait SingletonName extends Name
+
+
+trait SingletonNameOps extends NameOps
 {
+  this: SingletonName  =>
+
+  override def name() = this
 
   def baseSingletonName(): BaseSingletonName
 
 }
 
-/**
-  * Singleton name, each name have unique type-index. (example: Universum)
-  * @param typeIndex
-  */
-abstract class BaseSingletonName(override val typeIndex: Int) extends SingletonName with SingletonNameKind with PointTermNoExternalContext
-{
+
+
+abstract class BaseSingletonName(override val typeIndex: Int) extends SingletonName with SingletonNameKind with PointTermNoExternalContext {
+
+
   override final type Carrier = Unit
 
   override final def kind: PointTermKind = this
@@ -84,14 +97,14 @@ abstract class BaseSingletonName(override val typeIndex: Int) extends SingletonN
   override final def pointUnify(pk: PointTermKind, term: PointTerm): MultiTerm = {
     term.kind match {
       case x: SingletonNameKind =>
-          if (x.cast(term).typeIndex == typeIndex) {
-            term
-          } else {
-            EmptyTerm
-             //TODO: add context ?  KernelLanguage.contextWithFailure(ct.context,"singleton index mismatch"))
-          }
+        if (x.cast(term).typeIndex == typeIndex) {
+          term
+        } else {
+          EmptyTerm
+          //TODO: add context ?  KernelLanguage.contextWithFailure(ct.context,"singleton index mismatch"))
+        }
       case _ => EmptyTerm
-        //  TODO: add mismatch context ?  KernelLanguage.contextWithFailure(ct.context,"name mismatch"))
+      //  TODO: add mismatch context ?  KernelLanguage.contextWithFailure(ct.context,"name mismatch"))
     }
   }
 
@@ -111,10 +124,17 @@ abstract class BaseSingletonName(override val typeIndex: Int) extends SingletonN
     new SingletonNameInInternalContext(this,context)
   }
 
+
+
 }
 
-class ContextfullSingletonName(term: BaseSingletonName, internContext: MultiTerm, externContext:MultiTerm) extends TermInContexts(term,internContext,externContext) with Name with SingletonNameKind
+
+
+class ContextfullSingletonName(term: BaseSingletonName, internContext: MultiTerm, externContext:MultiTerm) extends TermInContexts(term,internContext,externContext) with SingletonName with SingletonNameKind
 {
+
+  this: PointTerm =>
+
   override type Carrier = Unit
 
   override def typeIndex: Int = baseSingletonName.typeIndex
@@ -163,7 +183,7 @@ object ContextfullSingletonName
 }
 
 
-class SingletonNameInInternalContext(term: BaseSingletonName, internContext: MultiTerm) extends Name with SingletonNameKind  with PointTermNoExternalContext {
+class SingletonNameInInternalContext(term: BaseSingletonName, internContext: MultiTerm) extends SingletonName with SingletonNameKind  with PointTermNoExternalContext {
 
   override type Carrier = Unit
 
@@ -196,28 +216,6 @@ class SingletonNameInInternalContext(term: BaseSingletonName, internContext: Mul
 
 }
 
-final case class AtomName(s:String) extends StringLikeName(s) with AtomTerm with PointTermNoExternalContext
-{
-
-  override def kind = AtomName
-
-  override def name: AtomName = this
-
-  override def typeIndex: Int = TypeIndexes.ATOM
-
-  def context(): MultiTerm = EmptyTerm
-
-  override def pushInternalContext(context: MultiTerm): MultiTerm = {
-    ContextfullAtomTerm(this,context,StarTerm.U)
-  }
-
-}
-
-object AtomName extends AtomTermKind
-{
-  override def atomTerm(x: PointTerm): AtomTerm = x.asInstanceOf[AtomName]
-
-}
 
 final object SeqName extends BaseSingletonName(TypeIndexes.SEQ)
 final object SetName extends BaseSingletonName(TypeIndexes.SET)

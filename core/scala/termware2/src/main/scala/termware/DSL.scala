@@ -9,7 +9,7 @@ trait DSL {
 
   def atom(s:String) = AtomTerm(s)
 
-  implicit def symbolToAtom(symbol:Symbol): AtomName = AtomName(symbol.name)
+  implicit def symbolToAtom(symbol:Symbol): AtomTerm = AtomName(symbol.name)
 
   @inline final def star = StarTerm.U
   @inline final def STAR = StarTerm.U
@@ -27,7 +27,7 @@ trait DSL {
   implicit def stringToStringTerm(value: String): StringTerm = StringTerm(value)
 
 
-  implicit def pairTranslate[A,B](x:(A,B))(implicit ac:A=>AtomName,bd:B=>MultiTerm):(AtomName,MultiTerm) =
+  implicit def pairTranslate[A,B](x:(A,B))(implicit ac:A=>AtomTerm,bd:B=>MultiTerm):(AtomTerm,MultiTerm) =
     (ac(x._1),bd(x._2))
 
 

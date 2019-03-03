@@ -2,12 +2,15 @@ package termware
 
 import termware.util.{FastRefOption, NameIndexed}
 
-trait AtomTerm extends PointTerm with ContextCarrierTerm
+trait AtomTermOps extends PointTermOps with ContextCarrierTerm
+                          with StringLikeName
 {
+
+  this: AtomTerm =>
 
   override def kind: PointTermKind = AtomTerm.Kind
 
-  override def name: AtomName
+  override def name: ContextLessAtomTerm
 
   override def arity: Int = 0
 
@@ -32,15 +35,21 @@ trait AtomTerm extends PointTerm with ContextCarrierTerm
   }
 
   // DSL
-  def apply(values: (AtomName,MultiTerm)* ): StructuredTerm = {
-    StructuredTerm.create(name, NameIndexed.fromSeq(values))
+  def apply(values: (AtomTerm,MultiTerm)* ): StructuredTerm = {
+    StructuredTerm.create(this, NameIndexed.fromSeq(values))
   }
 
+  // Name:
+  override def typeIndex(): Int = {
+    TypeIndexes.ATOM
+  }
 
 }
 
 
-case class ContextLessAtomTerm(override val name: AtomName) extends AtomTerm with PointTermNoExternalContext {
+final case class ContextLessAtomTerm(override val value: String) extends AtomTerm with PointTermNoExternalContext {
+
+  override def name: ContextLessAtomTerm = this
 
   override def context(): MultiTerm = EmptyTerm
 
@@ -48,31 +57,41 @@ case class ContextLessAtomTerm(override val name: AtomName) extends AtomTerm wit
     if (context.isStar()) {
       this
     } else {
-      ContextfullAtomTerm(name,EmptyTerm,context)
+      ContextfullAtomTerm(this,EmptyTerm,context)
     }
 
   override def pushInternalContext(context: MultiTerm): MultiTerm = {
     if (context.isEmpty()) {
       this
     } else {
-      new AtomTermInInternalContext(name,context)
+      new AtomTermInInternalContext(this,context)
     }
   }
 
 }
 
-case class AtomTermInInternalContext(override val name: AtomName, override val context:MultiTerm) extends
+object AtomName
+{
+
+  @inline final def apply(value:String) = ContextLessAtomTerm(value)
+
+}
+
+case class AtomTermInInternalContext(
+    override val name: ContextLessAtomTerm,
+    override val context:MultiTerm) extends
    TermInInternalContextOnly(name,context) with AtomTerm with PointTermNoExternalContext
 {
   override def pushInternalContext(context: MultiTerm): MultiTerm = {
     new AtomTermInInternalContext(name, context orElse this.context )
   }
 
+  override def value: String = name.value
 
 
 }
 
-case class ContextfullAtomTerm(override val name: AtomName,
+case class ContextfullAtomTerm(override val name: ContextLessAtomTerm,
                            override val context:MultiTerm = EmptyTerm,
                            externContext: MultiTerm = StarTerm.U
                           ) extends TermInContexts(name,context,externContext)
@@ -86,13 +105,15 @@ case class ContextfullAtomTerm(override val name: AtomName,
     }
   }
 
+  override def value: String = name.value
+
 }
 
 
 object ContextfullAtomTerm
 {
 
-  def apply(name:AtomName, context:MultiTerm, externContext: MultiTerm): AtomTerm = {
+  def apply(name: ContextLessAtomTerm, context:MultiTerm, externContext: MultiTerm): AtomTerm = {
     if (externContext.isStar()) {
       if (context.isEmpty()) {
         name
@@ -105,19 +126,5 @@ object ContextfullAtomTerm
   }
 
 
-}
-
-object AtomTerm
-{
-
-  object Kind extends AtomTermKind {
-    override def atomTerm(x: PointTerm): AtomTerm = x.asInstanceOf[ContextLessAtomTerm]
-  }
-
-  def apply(sname:String) = AtomName(sname)
-
-  def unapply(arg: AtomTerm): FastRefOption[AtomTerm] = {
-     new FastRefOption(arg)
-  }
 }
 

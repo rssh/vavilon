@@ -1,6 +1,7 @@
 package termware
 
-import termware.util.{FastRefOption, SeqSetTerm, SetTerm}
+
+import termware.util.{FastRefOption, SeqSetTermOps, SetTermOps}
 
 
 /**
@@ -9,8 +10,9 @@ import termware.util.{FastRefOption, SeqSetTerm, SetTerm}
   * So,
   *   { a -> b, c -> d }, so have hight-level optimized operations for this,
   */
-trait OrSetTerm extends SetTerm {
+trait OrSetTermOps extends SetTermOps {
 
+  this: OrSetTerm =>
 
   override def subst(context: MultiTerm): MultiTerm = {
     mapReduce(_.subst(context))(_ or _)(EmptyTerm)
@@ -25,7 +27,7 @@ trait OrSetTerm extends SetTerm {
 }
 
 
-object OrSetTerm
+object OrSetTermOps
 {
 
   // Default constructor
@@ -42,13 +44,11 @@ object OrSetTerm
 
   def _fromMap(map:Map[Name,MultiTerm]):OrSetTerm = {
     val seq = map.foldLeft(IndexedSeq[PointTerm]()){ case (s,(n,v)) =>
-      val a = impl.PlainArrowTerm(n,v)
+      val a = impl.PlainArrowTerm(n.toTerm(),v)
       s :+ a
     }
     new SeqOrSetTerm(seq)
   }
-
-  object Kind extends OrSetTermKind
 
 
 }
@@ -57,7 +57,7 @@ object OrSetTerm
 // TODO: implement.
 //  emptyseq == EmptyTerm
 // This is the most simply unoptimized form, which will be changed later.
-class SeqOrSetTerm(inSeq: Seq[MultiTerm]) extends OrSetTerm with SeqSetTerm with NoExternalContext
+class SeqOrSetTerm(inSeq: Seq[MultiTerm]) extends OrSetTerm with SeqSetTermOps with NoExternalContext
 {
 
   val seq = inSeq.toIndexedSeq
@@ -163,7 +163,7 @@ class OrSetInExternalContext(term: OrSetTerm with NoExternalContext, externConte
        val nterm = term or x.dropExternalContext()
        TermInExternalContext(nterm,externContext)
      } else {
-       OrSetTerm._fromSeq(Seq(this,x))
+       OrSetTermOps._fromSeq(Seq(this,x))
      }
   }
 

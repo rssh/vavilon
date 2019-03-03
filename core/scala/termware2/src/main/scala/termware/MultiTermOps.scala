@@ -2,9 +2,9 @@ package termware
 
 import cats.effect.IO
 
-trait MultiTerm
+trait MultiTermOps
 {
-
+  this: MultiTerm =>
 
   /**
     * Kind of term.

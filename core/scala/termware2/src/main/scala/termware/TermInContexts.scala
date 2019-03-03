@@ -1,17 +1,20 @@
 package termware
 
 
-abstract class TermInInternalContextOnly(term: NoExternalContext, val internContext: MultiTerm) extends MultiTerm with NoExternalContext // TODO: with ContextCarrierTerm
+abstract class TermInInternalContextOnly(term: NoExternalContext, val internContext: MultiTerm) extends MultiTermOps with NoExternalContext // TODO: with ContextCarrierTerm
 {
 
+  this: MultiTerm =>
 
   //override def kind: MultiTermKind = term.kind
 
 
 }
 
-abstract class TermInExternalContext(term: NoExternalContext, externContext: MultiTerm) extends MultiTerm
+abstract class TermInExternalContext(term: MultiTerm with NoExternalContext, externContext: MultiTerm) extends MultiTermOps
 {
+
+  this: MultiTerm =>
 
   override def termApply(term: PointTerm): MultiTerm = {
      this.term.termApply(term)
@@ -33,7 +36,7 @@ abstract class TermInExternalContext(term: NoExternalContext, externContext: Mul
     if (joinContext == externContext) {
       TermInExternalContext(term or x, externContext)
     } else {
-      OrSetTerm._fromSeq(Seq(this,x))
+      OrSetTermOps._fromSeq(Seq(this,x))
     }
   }
 
@@ -96,7 +99,8 @@ object PointTermInExternalContext
         ContextfullPrimitiveTerm(primitiveTerm.base,primitiveTerm.context(),primitiveTerm.externalContext() and externalContext)
       case k: AtomTermKind =>
         val atomTerm = k.atomTerm(term)
-        ContextfullAtomTerm(atomTerm.name,atomTerm.context(),atomTerm.externalContext() and externalContext)
+        val atomName: ContextLessAtomTerm = atomTerm.name
+        ContextfullAtomTerm(atomName,atomTerm.context(),atomTerm.externalContext() and externalContext)
       case k: SingletonNameKind =>
         val x = k.cast(term)
         ContextfullSingletonName(x.baseSingletonName,x.context(),x.externalContext() and externalContext)
@@ -117,8 +121,9 @@ object PointTermInExternalContext
 
 }
 
-abstract class TermInContexts(term: NoExternalContext, internContext: MultiTerm, externContext: MultiTerm) extends TermInExternalContext(term, externContext)  {
+abstract class TermInContexts(term: MultiTerm with NoExternalContext, internContext: MultiTerm, externContext: MultiTerm) extends TermInExternalContext(term, externContext)  {
 
+  this: MultiTerm =>
 
   override def subst(context: MultiTerm): MultiTerm =
     TermInContexts(term.subst(context),internContext, this.externalContext.subst(context))
@@ -240,11 +245,12 @@ object PointTermInContext
           }
         } else {
           val atomTerm = k.atomTerm(term)
+          val name: ContextLessAtomTerm = atomTerm.name
           val joinContext = atomTerm.externalContext() and externContext
           if (joinContext.isEmpty()) {
             EmptyTerm
           } else {
-            ContextfullAtomTerm(atomTerm.name,atomTerm.context() and internContext, joinContext)
+            ContextfullAtomTerm(name,atomTerm.context() and internContext, joinContext)
           }
         }
       case k: SingletonNameKind =>

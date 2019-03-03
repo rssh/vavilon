@@ -67,7 +67,7 @@ object TermwareCombinators {
       }
     )
 
-  def termArg[_:P]: P[(AtomName,MultiTerm)] = (
+  def termArg[_:P]: P[(AtomTerm,MultiTerm)] = (
      atomTerm ~ termArgAtomTail
     |
      multiTerm.map(t => (KernelNames.emptyName, t))

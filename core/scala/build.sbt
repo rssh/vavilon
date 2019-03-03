@@ -1,6 +1,7 @@
 
 lazy val commonSettings = Seq(
   organization := "com.github.rssh",
+  version := "0.0.1",
   scalaVersion := "2.12.8",
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Ypartial-unification"),
   libraryDependencies ++= Seq(

@@ -1,7 +1,9 @@
 package termware
 
-trait StarTerm extends MultiTerm with AndSetTerm
+trait StarTermOps extends MultiTermOps with AndSetTermOps
 {
+
+  this: StarTerm =>
 
   def context: MultiTerm
 
@@ -53,14 +55,6 @@ object ContextLessStarTerm extends StarTerm with NoExternalContext
 
 }
 
-object StarTerm {
-
-  object Kind extends StarTermKind
-
-  val U = ContextLessStarTerm
-
-
-}
 
 
 case class ContextStarTerm(internalContext: MultiTerm, override val externalContext: MultiTerm) extends TermInContexts(ContextLessStarTerm, internalContext, externalContext) with StarTerm {

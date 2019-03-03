@@ -3,6 +3,9 @@ package termware
 
 import termware.util.FastRefOption
 
+/**
+  * Kind for term: object which can transform term to needed kind
+  */
 sealed trait MultiTermKind
 {
   type Out <: MultiTerm
@@ -11,8 +14,16 @@ sealed trait MultiTermKind
   def cast(x:In):Out =
     x.asInstanceOf[Out]
 
-
 }
+
+/**
+  * Term with kind
+  */
+sealed trait MultiTermCasted
+{
+  def multiterm(): MultiTerm
+}
+
 
 sealed trait NonContradictionTermKind extends MultiTermKind
 
@@ -35,7 +46,11 @@ sealed trait PointTermKind extends NonContradictionTermKind
     }
   }
 
+}
 
+sealed trait PointTermCasted extends MultiTermCasted
+{
+  def pointTerm(): PointTerm
 }
 
 
@@ -47,6 +62,15 @@ trait AtomTermKind extends PointTermKind
 
   def atomTerm(x:PointTerm):AtomTerm
 
+}
+
+trait AtomTermCasted extends PointTermCasted
+{
+  override def multiterm(): MultiTerm = atomTerm()
+
+  override def pointTerm(): PointTerm = atomTerm()
+
+  def atomTerm(): AtomTerm
 }
 
 trait PrimitiveTermKind extends PointTermKind

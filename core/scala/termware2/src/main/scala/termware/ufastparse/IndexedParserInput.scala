@@ -61,11 +61,11 @@ class StringBasedIndexedParserInput(s: String, override val fname: String) exten
 
 object IndexedParserInput {
 
-  def fromString(s:String, file: String) =
+  def fromString(s:String, file: String): IndexedParserInput =
     new StringBasedIndexedParserInput(s,file)
 
-  def fromFile(path: String) = {
-    fromString(scala.io.Source.fromFile(path).mkString,path)
+  def fromFile(path: String): IndexedParserInput = {
+    fromString(scala.io.Source.fromFile(path).getLines().mkString("\n"),path)
   }
 
 }

@@ -13,19 +13,19 @@ import termware.{AtomName, AtomTerm, Name}
   *
   * AtomContext can contains check and default values.
   */
-case class NameIndexed[+T](nameIndexes:Map[AtomName,Int] = Map(),
+case class NameIndexed[+T](nameIndexes:Map[AtomTerm,Int] = Map(),
                            records: IndexedSeq[NameIndexed.Record[T]] = IndexedSeq())
 {
 
-  def :+[S >:T](p: (AtomName,S)):NameIndexed[S] =
+  def :+[S >:T](p: (AtomTerm,S)):NameIndexed[S] =
     NameIndexed[S](nameIndexes.updated(p._1,records.size), records :+ Record(p._1,p._2))
 
-  def updated[S >: T](n:AtomName,v:S):NameIndexed[S] =
+  def updated[S >: T](n:AtomTerm,v:S):NameIndexed[S] =
      this :+ (n,v)
 
   def size = records.size
 
-  def get(n:AtomName):Option[T] = (nameIndexes.get(n) map records) map (_.value)
+  def get(n:AtomTerm):Option[T] = (nameIndexes.get(n) map records) map (_.value)
 
   def get(i:Int):Option[T] = if (i>=0 && i < records.size) Some(records(i).value) else None
 
@@ -39,21 +39,21 @@ case class NameIndexed[+T](nameIndexes:Map[AtomName,Int] = Map(),
     records.exists(r => p(r.value))
   }
 
-  def foldLeft[S](s0:S)(f:(S,(AtomName,T))=>S):S =
+  def foldLeft[S](s0:S)(f:(S,(AtomTerm,T))=>S):S =
   {
     nameIndexes.foldLeft(s0){ case (s,(n,i)) =>
       f(s,(n,records(i).value))
     }
   }
 
-  def foldRight[S](s0:S)(f:((AtomName,T),S)=>S):S =
+  def foldRight[S](s0:S)(f:((AtomTerm,T),S)=>S):S =
   {
     nameIndexes.foldRight(s0){ case ((n,i),s) =>
       f((n,records(i).value),s)
     }
   }
 
-  def foldWhile[S](s0:S)(p: S => Boolean)(f: (S,(AtomName,T))=>S): S =
+  def foldWhile[S](s0:S)(p: S => Boolean)(f: (S,(AtomTerm,T))=>S): S =
   {
     var s = s0
     nameIndexes.find { case (n,i) =>
@@ -76,15 +76,15 @@ object NameIndexed
 
   def empty[V] = NameIndexed[V](Map(),IndexedSeq())
 
-  def fromSeq[V](x:Seq[(AtomName,V)]): NameIndexed[V] = {
+  def fromSeq[V](x:Seq[(AtomTerm,V)]): NameIndexed[V] = {
     x.foldLeft(empty[V]){ _ :+ _ }
   }
 
-  def fromMap[V](x:Map[AtomName,V]):NameIndexed[V] = {
+  def fromMap[V](x:Map[AtomTerm,V]):NameIndexed[V] = {
     x.foldLeft(empty[V]){ _ :+ _ }
   }
 
-  def pair[V](n:AtomName,v:V): NameIndexed[V] = empty[V] :+ (n,v)
+  def pair[V](n:AtomTerm,v:V): NameIndexed[V] = empty[V] :+ (n,v)
 
 
   implicit object NITraverse extends Traverse[NameIndexed] {

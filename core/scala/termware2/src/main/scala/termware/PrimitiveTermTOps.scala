@@ -5,8 +5,11 @@ import termware.util.{FastRefBooleanOption, FastRefOption}
 
 import scala.reflect.runtime.universe
 
-trait PrimitiveTerm[T] extends PointTerm with PrimitiveName[T]
+trait PrimitiveTermTOps[T] extends PointTermOps with PrimitiveName[T]
 {
+
+  this: PrimitiveTerm[T] =>
+
   type Value = T
 
   def value:T
@@ -175,17 +178,6 @@ object ContextfullPrimitiveTerm {
 
 }
 
-object PrimitiveTerm
-{
-
-  object Kind extends PrimitiveTermKind {
-    override def primitive(x: PointTerm): PrimitiveTerm[_] = {
-      x.asInstanceOf[PrimitiveTerm[_]]
-    }
-  }
-
-
-}
 
 
 abstract class BasePrimitiveTermImpl[S<:BasePrimitiveTermImpl[S,T],T](val value: T) extends BasePrimitiveTerm[T] {
@@ -240,6 +232,27 @@ object ByteTermOps extends PrimitiveTermOps[Byte]
 
 }
 
+object ByteTerm
+{
+
+  @inline
+  def apply(value: Byte): ByteTerm = ByteTermBase(value)
+
+  def unapply(arg: MultiTerm): FastRefOption[ByteTerm] = {
+    arg.kind match {
+      case k: PrimitiveTermKind =>
+        val pt = k.primitive(k.pointTerm(arg))
+        if (pt.primitiveTypeIndex == ByteTermOps.primitiveTypeIndex) {
+          FastRefOption(arg.asInstanceOf[ByteTerm])
+        } else {
+          FastRefOption.empty
+        }
+      case other => FastRefOption.empty
+    }
+  }
+
+}
+
 case class ShortTermBase(v:Short) extends BasePrimitiveTermImpl[ShortTermBase,Short](v)
 {
   def ops = ShortTermOps
@@ -269,16 +282,32 @@ object IntTermOps extends PrimitiveTermOps[Int]
   override def termConstructor(x: Int): IntTermBase = IntTermBase(x)
 }
 
+
+object IntTerm extends (Int => BasePrimitiveTerm[Int]) {
+
+  @inline
+  override def apply(v: Int): BasePrimitiveTerm[Int] = IntTermBase(v)
+
+  def unapply(arg: MultiTerm): FastRefOption[IntTerm] = {
+    arg.kind match {
+      case k: PrimitiveTermKind =>
+        val pt = k.primitive(k.pointTerm(arg))
+        if (pt.primitiveTypeIndex == IntTermOps.primitiveTypeIndex) {
+          FastRefOption(arg.asInstanceOf[IntTerm])
+        } else {
+          FastRefOption.empty
+        }
+      case other => FastRefOption.empty
+    }
+  }
+
+}
+
 case class LongTermBase(v:Long) extends BasePrimitiveTermImpl[LongTermBase,Long](v)
 {
   def ops = LongTermOps
 }
 
-object IntTerm extends (Int => BasePrimitiveTerm[Int])
-{
-  @inline
-  override def apply(v: Int): BasePrimitiveTerm[Int] = IntTermBase(v)
-}
 
 
 object LongTermOps extends PrimitiveTermOps[Long]
@@ -294,6 +323,21 @@ object LongTerm extends (Long => BasePrimitiveTerm[Long])
 {
   @inline
   override def apply(v: Long): BasePrimitiveTerm[Long] = LongTermBase(v)
+
+  def unapply(arg: MultiTerm): FastRefOption[LongTerm] = {
+    arg.kind match {
+      case k: PrimitiveTermKind =>
+        val pt = k.primitive(k.pointTerm(arg))
+        if (pt.primitiveTypeIndex == LongTermOps.primitiveTypeIndex) {
+          FastRefOption(arg.asInstanceOf[LongTerm])
+        } else {
+          FastRefOption.empty
+        }
+      case other => FastRefOption.empty
+    }
+  }
+
+
 }
 
 case class DoubleTermBase(v:Double) extends BasePrimitiveTermImpl[DoubleTermBase,Double](v)

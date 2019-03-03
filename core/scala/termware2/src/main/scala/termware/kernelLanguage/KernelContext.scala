@@ -36,6 +36,9 @@ object KernelContext {
 
   def kernelRules: MultiTerm = {
      And('x,'y) ^ ('x --> STAR and 'y --> STAR and KernelNames.checkName --> andRules)
+
   }
+
+
 
 }

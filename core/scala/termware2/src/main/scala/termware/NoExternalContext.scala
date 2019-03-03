@@ -1,7 +1,8 @@
 package termware
 
-trait NoExternalContext extends MultiTerm {
+trait NoExternalContext extends MultiTermOps {
 
+  this: MultiTerm =>
 
   override def externalContext(): MultiTerm = StarTerm.U
 
@@ -15,8 +16,10 @@ trait NoExternalContext extends MultiTerm {
 
 }
 
-trait PointTermNoExternalContext extends PointTerm with NoExternalContext
+trait PointTermNoExternalContext extends PointTermOps with NoExternalContext
 {
+
+  this: PointTerm =>
 
   override def dropExternalContext(): PointTerm with NoExternalContext = this
 

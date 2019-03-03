@@ -25,11 +25,11 @@ class AndSetTermInExternalContext(term: AndSetTerm with NoExternalContext, exter
   override def or(x: MultiTerm): MultiTerm = {
     val join = externalContext and x.externalContext()
     if (join.isEmpty()) {
-      OrSetTerm._fromSeq(Seq(this,x))
+      OrSetTermOps._fromSeq(Seq(this,x))
     } else if (join == externalContext && join == x.externalContext()){
       TermInExternalContext(term or x,join)
     } else {
-      OrElseTerm(TermInExternalContext(term or x,join),OrSetTerm._fromSeq(Seq(this,x)))
+      OrElseTerm(TermInExternalContext(term or x,join),OrSetTermOps._fromSeq(Seq(this,x)))
     }
   }
 

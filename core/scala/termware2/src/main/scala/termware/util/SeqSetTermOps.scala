@@ -5,8 +5,10 @@ import termware._
 // TODO: implement.
 //  emptyseq == EmptyTerm
 // This is the most simply unoptimized form, which will be changed later.
-trait SeqSetTerm extends SetTerm
+trait SeqSetTermOps extends SetTermOps
 {
+
+  this: SetTerm =>
 
   val seq: IndexedSeq[MultiTerm]
 

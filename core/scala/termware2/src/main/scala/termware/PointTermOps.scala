@@ -2,7 +2,9 @@ package termware
 
 import termware.util.FastRefOption
 
-trait PointTerm extends MultiTerm {
+trait PointTermOps extends MultiTermOps {
+
+  this: PointTerm =>
 
   def name: Name
 
@@ -57,15 +59,15 @@ trait PointTerm extends MultiTerm {
       case k:PointTermKind => orPoint(k,k.pointTerm(x))
       case k:EmptyTermKind => this
       case k:OrSetTermKind => k.orSet(x) or this
-      case k:AndSetTermKind => OrSetTerm._fromSeq(Seq(this,x))
+      case k:AndSetTermKind => OrSetTermOps._fromSeq(Seq(this,x))
       case k:OrElseTermKind => k.cast(x).map(_ or x)
       case k:StarTermKind => k.cast(x)
-      case k:IfTermKind => OrSetTerm._fromSeq(Seq(this,x))
+      case k:IfTermKind => OrSetTermOps._fromSeq(Seq(this,x))
     }
   }
 
   def orPoint(k:PointTermKind, x:PointTerm): MultiTerm = {
-    OrSetTerm.createPoints(this,x)
+    OrSetTermOps.createPoints(this,x)
   }
 
   override def dropExternalContext(): PointTerm with NoExternalContext
@@ -75,10 +77,6 @@ trait PointTerm extends MultiTerm {
 
 }
 
-object PointTerm
-{
-
-}
 
 object IsPointTerm
 {

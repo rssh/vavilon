@@ -2,8 +2,10 @@ package termware
 
 import termware.util.FastRefOption
 
-trait ArrowTerm extends PointTerm
+trait ArrowTermOps extends PointTermOps
 {
+
+  this:ArrowTerm =>
 
   def left: MultiTerm
 
@@ -19,16 +21,11 @@ trait ArrowTerm extends PointTerm
 
 
 
-object ArrowTerm  {
+object ArrowTermOps  {
 
   def apply(left: MultiTerm, right: MultiTerm): MultiTerm = {
     // TODO: refine.
     impl.PlainArrowTerm(left,right)
-  }
-
-  object Kind extends ArrowTermKind {
-    override def arrow(x: PointTerm): ArrowTerm = x.asInstanceOf[ArrowTerm]
-    override def cast(x: PointTerm): ArrowTerm = x.asInstanceOf[ArrowTerm]
   }
 
 }

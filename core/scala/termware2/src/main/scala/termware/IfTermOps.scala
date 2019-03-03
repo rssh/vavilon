@@ -1,7 +1,11 @@
 package termware
 
-trait IfTerm extends MultiTerm
+import termware.util.FastRefOption
+
+trait IfTermOps extends MultiTermOps
 {
+
+  this: IfTerm =>
 
   def value: MultiTerm
 
@@ -18,6 +22,7 @@ trait IfTerm extends MultiTerm
   override def kind: MultiTermKind = IfTermKind
 
 
+  
   override def termApply(argument: PointTerm): MultiTerm = {
     val check = KernelLanguage.evalCheck(condition,value)
     check match {
@@ -57,7 +62,6 @@ trait IfTerm extends MultiTerm
   }
 
   override def dropExternalContext(): IfTerm with NoExternalContext
-
 
 }
 
@@ -100,14 +104,14 @@ case class PlainIfTerm(val value: MultiTerm, val condition:PointTerm) extends If
       case k: EmptyTermKind => this
       case k: StarTermKind => x
       case k: OrSetTermKind => k.orSet(x) or this
-      case k: AndSetTermKind => OrSetTerm._fromSeq(Seq(this,x))
-      case k: OrElseTermKind => OrSetTerm._fromSeq(Seq(this,x))
-      case k: PointTermKind => OrSetTerm._fromSeq(Seq(this,x))
+      case k: AndSetTermKind => OrSetTermOps._fromSeq(Seq(this,x))
+      case k: OrElseTermKind => OrSetTermOps._fromSeq(Seq(this,x))
+      case k: PointTermKind => OrSetTermOps._fromSeq(Seq(this,x))
       case k: IfTermKind => val gx = k.guarded(x)
         if (gx.value == value) {
           IfTerm(value,KernelLanguage.Or(condition,gx.condition))
         } else {
-          OrSetTerm._fromSeq(Seq(this,x))
+          OrSetTermOps._fromSeq(Seq(this,x))
         }
     }
   }
@@ -155,28 +159,28 @@ object IfTermInExternalContext
 }
 
 
-object IfTerm
-{
 
-  object Kind extends IfTermKind
+
+object IfTermOps
+{
 
   def apply(value: MultiTerm, condition: PointTerm): MultiTerm = {
     if (value.externalContext().isStar() && condition.isStar()) {
       value.kind match {
         case k: EmptyTermKind => EmptyTerm
         case k: IfTermKind => val iv = k.guarded(value)
-          IfTerm(iv.value,KernelLanguage.And(condition,iv.condition))
+          IfTermOps(iv.value,KernelLanguage.And(condition,iv.condition))
         case k: StarTermKind =>
           new PlainIfTerm(value,condition)
         case k: OrSetTermKind =>
-          k.orSet(value).mapReduce(IfTerm(_,condition))(_ or _)(EmptyTerm)
+          k.orSet(value).mapReduce(IfTermOps(_,condition))(_ or _)(EmptyTerm)
         case _: AndSetTermKind | _:PointTermKind | _:OrElseTermKind =>
           new PlainIfTerm(value,condition)
       }
     } else {
       value.ifExternalContext(condition.externalContext()) { joinContext =>
         val pointCondition = condition.dropExternalContext().asInstanceOf[PointTerm]
-        val wec = IfTerm(value.dropExternalContext(),condition.dropExternalContext())
+        val wec = IfTermOps(value.dropExternalContext(),condition.dropExternalContext())
         wec.kind match {
           case k: EmptyTermKind => wec
           case k: IfTermKind =>
@@ -197,5 +201,17 @@ object IfTerm
     }
   }
 
+
+}
+
+object IsIfTerm
+{
+
+  def unapply(arg: MultiTerm): FastRefOption[IfTerm] = {
+    arg.kind match {
+      case IfTerm.Kind => FastRefOption(IfTerm.Kind.cast(arg))
+      case _ => FastRefOption.empty
+    }
+  }
 
 }

@@ -1,10 +1,13 @@
 package termware
 
-import termware.util.{FastRefOption, SetTerm}
+import termware.util.{FastRefOption}
 
 
-final object EmptyTerm extends MultiTerm with OrSetTerm with AndSetTerm with NoExternalContext
+trait EmptyTermOps extends MultiTermOps with OrSetTermOps with AndSetTermOps with NoExternalContext
 {
+
+  this: EmptyTerm.type =>
+
   override def kind: MultiTermKind = EmptyTermKind
 
   final val Kind = EmptyTermKind

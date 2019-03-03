@@ -1,9 +1,9 @@
 package termware.impl
 
 import termware._
-import termware.util.SeqSetTerm
+import termware.util.SeqSetTermOps
 
-class SeqAndSetTerm(terms: Seq[MultiTerm]) extends SeqSetTerm with AndSetTerm with NoExternalContext
+class SeqAndSetTerm(terms: Seq[MultiTerm]) extends AndSetTerm with SeqSetTermOps  with NoExternalContext
 {
   override val seq: IndexedSeq[MultiTerm] = terms.toIndexedSeq
 
@@ -58,11 +58,11 @@ class SeqAndSetTerm(terms: Seq[MultiTerm]) extends SeqSetTerm with AndSetTerm wi
     // TODO: think about tagged unify ?
     val u = (this unify x)
     if (u.isEmpty()) {
-      OrSetTerm._fromSeq(Seq(this,x))
+      OrSetTermOps._fromSeq(Seq(this,x))
     } else if (u.externalContext().isStar()) {
       u
     } else {
-      OrSetTerm._fromSeq(Seq(this,x))
+      OrSetTermOps._fromSeq(Seq(this,x))
     }
   }
 

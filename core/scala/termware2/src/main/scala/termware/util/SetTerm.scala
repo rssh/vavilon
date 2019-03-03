@@ -1,8 +1,10 @@
 package termware.util
 
-import termware.{MultiTerm, PointTerm}
+import termware.{MultiTerm, MultiTermOps, PointTerm, SetTerm}
 
-trait SetTerm extends MultiTerm {
+trait SetTermOps extends MultiTermOps {
+
+  this: SetTerm =>
 
   def mapReduce[A](map: MultiTerm => A)(reduce:(A, A) => A)(zero: =>A):A
 

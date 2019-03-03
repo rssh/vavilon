@@ -2,8 +2,9 @@ package termware
 
 import termware.util.FastRefOption
 
-trait OrElseTerm extends MultiTerm {
+trait OrElseTermOps extends MultiTermOps {
 
+  this: OrElseTerm =>
 
   override def kind = OrElseTerm.Kind
 
@@ -38,7 +39,7 @@ trait OrElseTerm extends MultiTerm {
       case k: EmptyTermKind => this
       case k: StarTermKind => t
       case k: OrSetTermKind => k.orSet(t) or t
-      case _ => OrSetTerm._fromSeq(Seq(this,t))
+      case _ => OrSetTermOps._fromSeq(Seq(this,t))
     }
   }
 
@@ -67,7 +68,7 @@ class ContextlessOrElseTerm(frs:MultiTerm, snd: MultiTerm) extends OrElseTerm wi
     val c = f(frs)
     if (p(c)) c else {
       snd match {
-         case OrElseTerm(snd) => snd.firstMapped(f)(p)(default)
+         case OrElseTermOps(snd) => snd.firstMapped(f)(p)(default)
          case _ => val cs = f(snd)
            if (p(cs)) {
              cs
@@ -119,7 +120,7 @@ object OrElseTermInExternalContext {
 
 }
 
-object OrElseTerm
+object OrElseTermOps
 {
 
   def apply(frs: MultiTerm, snd: MultiTerm): MultiTerm = {
@@ -135,9 +136,6 @@ object OrElseTerm
     }
   }
 
-  //def fromSeq()
-
-  object Kind extends OrElseTermKind
 
   def unapply(arg: MultiTerm): FastRefOption[OrElseTerm] = {
     arg.kind match {
